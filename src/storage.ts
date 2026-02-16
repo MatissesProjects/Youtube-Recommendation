@@ -15,6 +15,7 @@ export interface InterestProfile {
 export interface HistoryEntry {
   videoId: string;
   channelId: string;
+  title?: string;
   watchTime: number; // in seconds
   totalDuration: number; // in seconds
   timestamp: number;

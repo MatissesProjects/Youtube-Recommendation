@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const statusElement = document.getElementById('status');
   const creatorsList = document.getElementById('creators-list');
   const suggestionsList = document.getElementById('suggestions-list');
+  const topicsList = document.getElementById('topics-list');
+  const recentList = document.getElementById('recent-list');
   const importBtn = document.getElementById('import-btn');
   const refreshBtn = document.getElementById('refresh-btn');
   const discoverBtn = document.getElementById('discover-btn');
@@ -27,6 +29,56 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="creator-item">
             <span class="name">${c.name}</span>
             <span class="score">${c.loyaltyScore}</span>
+          </div>
+        `).join('');
+      }
+    }
+  }
+
+  async function renderTopTopics() {
+    const creators = await Storage.getCreators();
+    const keywordMap: Record<string, number> = {};
+
+    Object.values(creators).forEach(c => {
+      if (c.keywords) {
+        Object.entries(c.keywords).forEach(([word, count]) => {
+          keywordMap[word] = (keywordMap[word] || 0) + count;
+        });
+      }
+    });
+
+    const sortedKeywords = Object.entries(keywordMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8);
+
+    if (topicsList) {
+      if (sortedKeywords.length === 0) {
+        topicsList.innerHTML = '<p class="small-text">Watch more videos to build your profile.</p>';
+      } else {
+        topicsList.innerHTML = `
+          <div class="topic-cloud">
+            ${sortedKeywords.map(([word, count]) => `
+              <span class="topic-tag" style="font-size: ${Math.max(0.7, Math.min(1.2, 0.7 + count * 0.05))}em">
+                ${word}
+              </span>
+            `).join('')}
+          </div>
+        `;
+      }
+    }
+  }
+
+  async function renderRecentHits() {
+    const history = await Storage.getHistory();
+    const recent = history.filter(h => h.title).reverse().slice(0, 3);
+
+    if (recentList) {
+      if (recent.length === 0) {
+        recentList.innerHTML = '<p class="small-text">Finish a video to see recent hits.</p>';
+      } else {
+        recentList.innerHTML = recent.map(h => `
+          <div class="recent-item">
+            <span class="recent-title">${h.title}</span>
           </div>
         `).join('');
       }
@@ -108,6 +160,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   renderCreators();
   renderSuggestions();
+  renderTopTopics();
+  renderRecentHits();
   if (statusElement) {
     statusElement.textContent = 'The Curator is active.';
   }

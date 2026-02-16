@@ -45,6 +45,10 @@ function getVideoKeywords(): string[] {
   return title.split(/\s+/).filter(w => w.length > 3 && !stopWords.has(w));
 }
 
+function getVideoTitle(): string {
+  return document.title.replace(' - YouTube', '').trim();
+}
+
 async function logWatch(video: HTMLVideoElement) {
   if (hasLoggedCurrentVideo || !currentVideoId || !currentChannelId) return;
 
@@ -58,11 +62,14 @@ async function logWatch(video: HTMLVideoElement) {
     console.log(`The Curator: Logging watch for ${currentVideoId} by ${currentChannelName}`);
     
     const keywords = getVideoKeywords();
+    const videoTitle = getVideoTitle();
     console.log('The Curator: Extracted keywords:', keywords);
+    console.log('The Curator: Extracted title:', videoTitle);
 
     const entry: HistoryEntry = {
       videoId: currentVideoId,
       channelId: currentChannelId,
+      title: videoTitle,
       watchTime: currentTime,
       totalDuration: duration,
       timestamp: Date.now(),
