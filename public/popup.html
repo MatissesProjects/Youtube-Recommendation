@@ -35,6 +35,33 @@
       color: #c00;
       font-weight: bold;
     }
+    .suggestion-item {
+      font-size: 0.9em;
+      align-items: center;
+    }
+    .suggestion-item .info {
+      display: flex;
+      flex-direction: column;
+    }
+    .suggestion-item .reason {
+      font-size: 0.8em;
+      color: #777;
+    }
+    .suggestion-actions {
+      display: flex;
+      gap: 5px;
+    }
+    .small-btn {
+      padding: 2px 8px;
+      font-size: 1em;
+      flex: none;
+    }
+    .ignore-btn {
+      background-color: #606060;
+    }
+    .follow-btn {
+      background-color: #2ba640;
+    }
     .actions {
       margin-top: 15px;
       display: flex;
@@ -66,11 +93,19 @@
     <div id="creators-list">
       <p>Loading...</p>
     </div>
+    
+    <h3>Fresh Feed (Discovery)</h3>
+    <div id="suggestions-list">
+      <p>No suggestions yet. Try "Discover New".</p>
+    </div>
   </div>
   <div class="actions">
     <button id="import-btn">Import History</button>
     <button id="refresh-btn">Refresh</button>
     <button id="discover-btn">Discover New</button>
+  </div>
+  <div class="danger-zone" style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px;">
+    <button id="nuke-btn" style="background-color: #d93025; font-size: 0.8em; padding: 5px;">Nuke All Data</button>
   </div>
   <script src="popup.js"></script>
 </body>

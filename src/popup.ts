@@ -4,9 +4,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('Popup loaded.');
   const statusElement = document.getElementById('status');
   const creatorsList = document.getElementById('creators-list');
+  const suggestionsList = document.getElementById('suggestions-list');
   const importBtn = document.getElementById('import-btn');
   const refreshBtn = document.getElementById('refresh-btn');
   const discoverBtn = document.getElementById('discover-btn');
+  const nukeBtn = document.getElementById('nuke-btn');
 
   async function renderCreators() {
     const creators = await Storage.getCreators();
@@ -22,6 +24,51 @@ document.addEventListener('DOMContentLoaded', async () => {
             <span class="score">${c.loyaltyScore}</span>
           </div>
         `).join('');
+      }
+    }
+  }
+
+  async function renderSuggestions() {
+    const suggestions = await Storage.getSuggestions();
+    const newSuggestions = suggestions.filter(s => s.status === 'new').slice(0, 5);
+
+    if (suggestionsList) {
+      if (newSuggestions.length === 0) {
+        suggestionsList.innerHTML = '<p>No new suggestions. Try "Discover New".</p>';
+      } else {
+        suggestionsList.innerHTML = newSuggestions.map(s => `
+          <div class="creator-item suggestion-item" data-id="${s.channelId}">
+            <div class="info">
+              <span class="name">${s.channelId}</span>
+              <span class="reason">${s.reason}</span>
+            </div>
+            <div class="suggestion-actions">
+              <button class="small-btn follow-btn" title="Follow">✓</button>
+              <button class="small-btn ignore-btn" title="Ignore">×</button>
+            </div>
+          </div>
+        `).join('');
+
+        // Add event listeners to buttons
+        suggestionsList.querySelectorAll('.follow-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const id = (e.target as HTMLElement).closest('.suggestion-item')?.getAttribute('data-id');
+            if (id) {
+              await Storage.updateSuggestionStatus(id, 'followed');
+              renderSuggestions();
+            }
+          });
+        });
+
+        suggestionsList.querySelectorAll('.ignore-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const id = (e.target as HTMLElement).closest('.suggestion-item')?.getAttribute('data-id');
+            if (id) {
+              await Storage.updateSuggestionStatus(id, 'ignored');
+              renderSuggestions();
+            }
+          });
+        });
       }
     }
   }
@@ -45,7 +92,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (statusElement) statusElement.textContent = 'Discovering new creators...';
   });
 
+  nukeBtn?.addEventListener('click', async () => {
+    if (confirm('Are you sure you want to delete ALL data? This cannot be undone.')) {
+      await Storage.clearAll();
+      renderCreators();
+      renderSuggestions();
+      if (statusElement) statusElement.textContent = 'All data nuked.';
+    }
+  });
+
   renderCreators();
+  renderSuggestions();
   if (statusElement) {
     statusElement.textContent = 'The Curator is active.';
   }

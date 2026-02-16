@@ -49,5 +49,18 @@ export const Storage = {
 
   async saveSuggestions(suggestions: Suggestion[]): Promise<void> {
     await chrome.storage.local.set({ suggestions });
+  },
+
+  async updateSuggestionStatus(channelId: string, status: Suggestion['status']): Promise<void> {
+    const suggestions = await this.getSuggestions();
+    const index = suggestions.findIndex(s => s.channelId === channelId);
+    if (index !== -1 && suggestions[index]) {
+      suggestions[index].status = status;
+      await this.saveSuggestions(suggestions);
+    }
+  },
+
+  async clearAll(): Promise<void> {
+    await chrome.storage.local.clear();
   }
 };
