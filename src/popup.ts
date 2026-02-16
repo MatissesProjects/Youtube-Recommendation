@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         suggestionsList.innerHTML = newSuggestions.map(s => `
           <div class="creator-item suggestion-item" data-id="${s.channelId}">
             <div class="info">
-              <span class="name">${s.channelId}</span>
+              <a href="https://www.youtube.com${s.channelId}" target="_blank" class="name">${s.channelId.replace('/@', '').replace('/', '')}</a>
               <span class="reason">${s.reason}</span>
             </div>
             <div class="suggestion-actions">
