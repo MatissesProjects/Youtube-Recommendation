@@ -42,6 +42,15 @@ export const Storage = {
     await chrome.storage.local.set({ history });
   },
 
+  async bulkAddHistory(entries: HistoryEntry[]): Promise<void> {
+    const history = await this.getHistory();
+    // Use a Set to avoid duplicates if importing multiple times
+    const existingIds = new Set(history.map(h => h.videoId + h.timestamp));
+    const uniqueNew = entries.filter(e => !existingIds.has(e.videoId + e.timestamp));
+    
+    await chrome.storage.local.set({ history: [...history, ...uniqueNew] });
+  },
+
   async getSuggestions(): Promise<Suggestion[]> {
     const data = await chrome.storage.local.get('suggestions');
     return (data.suggestions as Suggestion[]) || [];
