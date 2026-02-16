@@ -46,9 +46,21 @@ async function pollRSS() {
         const channelId = creator.id.replace('/channel/', '');
         const response = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`);
         const text = await response.text();
-        const match = text.match(/<published>(.*?)<\/published>/);
-        if (match && match[1]) {
-          creator.lastUploadDate = new Date(match[1]).getTime();
+        
+        // Extract latest video info
+        const titleMatch = text.match(/<entry>[\s\S]*?<title>(.*?)<\/title>/);
+        const idMatch = text.match(/<yt:videoId>(.*?)<\/yt:videoId>/);
+        const dateMatch = text.match(/<published>(.*?)<\/published>/);
+
+        if (dateMatch && dateMatch[1]) {
+          creator.lastUploadDate = new Date(dateMatch[1]).getTime();
+          if (titleMatch && idMatch) {
+            creator.latestVideo = {
+              title: titleMatch[1],
+              id: idMatch[1],
+              published: creator.lastUploadDate
+            };
+          }
           await Storage.saveCreator(creator);
         }
       }

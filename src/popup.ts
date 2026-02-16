@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const suggestionsList = document.getElementById('suggestions-list');
   const topicsList = document.getElementById('topics-list');
   const recentList = document.getElementById('recent-list');
+  const favoriteVideosList = document.getElementById('favorite-videos-list');
   const importBtn = document.getElementById('import-btn');
   const refreshBtn = document.getElementById('refresh-btn');
   const discoverBtn = document.getElementById('discover-btn');
@@ -85,9 +86,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  async function renderLatestVideos() {
+    const creators = await Storage.getCreators();
+    const topLoyal = Object.values(creators)
+      .filter(c => c.loyaltyScore > 70 && c.latestVideo)
+      .sort((a, b) => (b.latestVideo?.published || 0) - (a.latestVideo?.published || 0))
+      .slice(0, 3);
+
+    if (favoriteVideosList) {
+      if (topLoyal.length === 0) {
+        favoriteVideosList.innerHTML = '<p class="small-text">No new videos from your high-loyalty creators.</p>';
+      } else {
+        favoriteVideosList.innerHTML = topLoyal.map(c => `
+          <div class="video-alert">
+            <span class="creator-badge">${c.name}</span>
+            <a href="https://www.youtube.com/watch?v=${c.latestVideo?.id}" target="_blank" class="video-link">
+              ${c.latestVideo?.title}
+            </a>
+          </div>
+        `).join('');
+      }
+    }
+  }
+
   async function renderSuggestions() {
     const suggestions = await Storage.getSuggestions();
-    const newSuggestions = suggestions.filter(s => s.status === 'new').slice(0, 5);
+    const creators = await Storage.getCreators();
+    
+    // Calculate global interest fingerprint
+    const keywordMap: Record<string, number> = {};
+    Object.values(creators).forEach(c => {
+      if (c.keywords) {
+        Object.entries(c.keywords).forEach(([word, count]) => {
+          keywordMap[word] = (keywordMap[word] || 0) + count;
+        });
+      }
+    });
+
+    const newSuggestions = suggestions
+      .filter(s => s.status === 'new')
+      .map(s => {
+        // Simple scoring: how many words in the "reason" match our top keywords?
+        let score = 0;
+        const reasonWords = s.reason.toLowerCase().split(/\s+/);
+        reasonWords.forEach(word => {
+          if (keywordMap[word]) score += keywordMap[word];
+        });
+        return { ...s, matchScore: score };
+      })
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .slice(0, 5);
 
     if (suggestionsList) {
       if (newSuggestions.length === 0) {
@@ -162,6 +210,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderSuggestions();
   renderTopTopics();
   renderRecentHits();
+  renderLatestVideos();
   if (statusElement) {
     statusElement.textContent = 'The Curator is active.';
   }
