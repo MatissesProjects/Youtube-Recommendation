@@ -57,6 +57,11 @@ async function logWatch(video: HTMLVideoElement) {
   if (!duration || isNaN(duration)) return;
 
   const completionRatio = currentTime / duration;
+  
+  // Every 10% progress, log a quiet heartbeat to console for debugging
+  if (Math.floor(currentTime) % 30 === 0) {
+    console.log(`The Curator: Progress ${Math.round(completionRatio * 100)}% (${Math.round(currentTime)}/${Math.round(duration)}s)`);
+  }
 
   if (completionRatio > 0.8 || currentTime > 600) {
     console.log(`The Curator: Logging watch for ${currentVideoId} by ${currentChannelName}`);
@@ -83,9 +88,12 @@ async function logWatch(video: HTMLVideoElement) {
     
     // Update creator's keyword profile
     const existingKeywords = existing?.keywords || {};
+    console.log('The Curator: Existing keywords for creator:', JSON.stringify(existingKeywords));
+    
     keywords.forEach(k => {
       existingKeywords[k] = (existingKeywords[k] || 0) + 1;
     });
+    console.log('The Curator: New keyword map:', JSON.stringify(existingKeywords));
 
     const creator: Creator = {
       id: currentChannelId,
@@ -95,7 +103,10 @@ async function logWatch(video: HTMLVideoElement) {
       lastUploadDate: existing?.lastUploadDate,
       keywords: existingKeywords
     };
-    await Storage.saveCreator(creator);
+    
+    creators[currentChannelId] = creator;
+    console.log('The Curator: Saving updated creators list to storage...');
+    await chrome.storage.local.set({ creators });
 
     hasLoggedCurrentVideo = true;
   }
@@ -188,6 +199,15 @@ function initWatcher() {
   }
 
   video.ontimeupdate = () => logWatch(video);
+  video.onended = () => {
+    console.log('The Curator: Video ended, checking for completion...');
+    logWatch(video);
+  };
+  video.onpause = () => {
+    console.log('The Curator: Video paused, checking for completion...');
+    logWatch(video);
+  };
+  console.log('The Curator: Watcher initialized for current video.');
 }
 
 // Global observer for navigation (YouTube is a SPA)
