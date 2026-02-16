@@ -15,17 +15,8 @@
 *Setup the project skeleton and storage layer.*
 
 * [x] **Initialize Project**
-    * [x] vanilla TS, HTML, CSS.
-    * [x] Create `manifest.json` (Manifest V3).
-    * [x] Define permissions: `storage`, `activeTab`, `scripting`, `alarms`.
 * [x] **Database Layer (web based storage)**
-    * [x] Using `chrome.storage.local` for simplicity and persistence.
-    * [x] **Schema Definition:** (See `src/storage.ts`)
-    * [x] `creators`: `id` (channelId), `name`, `lastUploadDate`, `loyaltyScore`.
-    * [x] `history`: `videoId`, `channelId`, `watchTime`, `totalDuration`, `timestamp`.
-    * [x] `suggestions`: `channelId`, `reason`, `status`.
 * [x] **State Management**
-    * [x] Centralized via `storage.ts` and shared between Service Worker and Popup.
 
 ---
 
@@ -34,29 +25,25 @@
 *Mechanisms to gather user history and creator activity.*
 
 * [x] **The Watcher (Content Script)**
-    * [x] Inject script into YouTube video player pages.
-    * [x] Logic: Only log "watch" if `(currentTime / duration) > 0.8` OR `time > 10 mins`.
 * [x] **The Scraper (History Importer)**
-    * [x] Build `historyScraper.ts` to parse `youtube.com/feed/history`.
-    * [x] **Action:** Manual trigger from Popup.
+    * [x] Bulk history seeding (Every video in history = 1 frequency count).
 * [x] **The Tracker (RSS Poller)**
-    * [x] Background Alarm (runs once/day).
-    * [x] Logic: Fetch RSS for top 50 tracked creators to update `lastUploadDate`.
+* [x] **The Side-Eye (Sidebar Scraper)** 🆕
+    * [ ] Scrape creators suggested in the YouTube sidebar while watching.
+    * [ ] Boost "Loyalty" if a high-score creator appears in suggestions.
+    * [ ] Add new creators to `suggestions` with reason "Suggested alongside [Current Creator]".
 
 ---
 
-## 🧠 Track 3: The Algorithm (The Brain) ✅
+## 🧠 Track 3: The Algorithm (The Brain) 🔄
 
 *Implementing the scoring logic and weighting systems.*
 
-* [x] **Core Metrics Calculation** (See `src/algorithm.ts`)
-    * [x] **`Frequency`**: Total videos watched.
-    * [x] **`Recency`**: Days since last watch.
-    * [x] **`Loyalty Ratio`**: Average completion of recent videos.
+* [x] **Core Metrics Calculation**
 * [x] **The Decay Engine (5-Month Rule)**
-    * [x] Logic: 0.2x penalty if inactive for 5 months, with hiatus exemption.
 * [x] **The "Creator Score" Function**
-    * [x] Combined 0-100 sortable integer.
+* [ ] **Quality Filter** 🆕
+    * [ ] Filter "Top Loyalties" to only show creators with `frequency >= 2` to remove one-off noise.
 
 ---
 
@@ -65,12 +52,10 @@
 *Finding new content based on the "High Score" creators.*
 
 * [x] **Fingerprinting**
-    * [x] Select top 5 creators by "Creator Score."
-* [ ] **Lookalike Search (YouTube API)**
-    * [ ] *Pivoted to Social Graph Scraper to avoid API Quotas.*
 * [x] **Social Graph Scraper**
-    * [x] Visit "High Score" creator `/channels` tabs.
-    * [x] Scrape featured channels and add to `suggestions`.
+    * [x] Scrape "Channels" tab of top creators.
+* [ ] **Related Video Discovery**
+    * [ ] Use the **Side-Eye** data to build a map of related creators.
 
 ---
 
@@ -79,13 +64,8 @@
 *How the user interacts with the extension.*
 
 * [x] **Popup Dashboard**
-    * [x] **Stats View:** List of top creators and their loyalty scores.
 * [ ] **The "Fresh Feed"**
-    * [ ] Display suggested videos/channels from the Discovery Engine.
 * [x] **Control Panel**
-    * [x] "Import History" button.
-    * [x] "Refresh" scores button.
-    * [x] "Discover New" button.
 
 ---
 
@@ -94,4 +74,3 @@
 * [ ] **Edge Case: The Binge Watcher**
 * [ ] **Edge Case: Shorts**
 * [ ] **Privacy Check**
-    * [ ] Add "Export Data" / "Nuke Data" buttons.

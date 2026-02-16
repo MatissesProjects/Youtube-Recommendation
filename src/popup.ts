@@ -12,7 +12,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function renderCreators() {
     const creators = await Storage.getCreators();
-    const sortedCreators = Object.values(creators).sort((a, b) => b.loyaltyScore - a.loyaltyScore);
+    const sortedCreators = Object.values(creators)
+      .filter(c => c.frequency >= 2)
+      .sort((a, b) => b.loyaltyScore - a.loyaltyScore);
 
     if (creatorsList) {
       if (sortedCreators.length === 0) {

@@ -3,6 +3,7 @@ export interface Creator {
   name: string;
   lastUploadDate?: number;
   loyaltyScore: number;
+  frequency: number;
 }
 
 export interface HistoryEntry {

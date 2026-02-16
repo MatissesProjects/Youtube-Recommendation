@@ -1,4 +1,4 @@
-import { Storage, HistoryEntry, Creator } from './storage';
+import { Storage, HistoryEntry, Creator, Suggestion } from './storage';
 
 console.log('The Curator content script loaded.');
 
@@ -63,6 +63,33 @@ async function logWatch(video: HTMLVideoElement) {
   }
 }
 
+async function scrapeSidebar() {
+  const sidebarItems = document.querySelectorAll('ytd-compact-video-renderer, ytd-rich-item-renderer');
+  const suggestions: Suggestion[] = await Storage.getSuggestions();
+  const creators = await Storage.getCreators();
+  
+  for (const item of Array.from(sidebarItems)) {
+    const channelLink = item.querySelector('ytd-channel-name a, #channel-name a, .ytd-channel-name a') as HTMLAnchorElement;
+    if (channelLink) {
+      const channelId = channelLink.getAttribute('href');
+      const channelName = (channelLink.textContent || '').trim();
+      
+      if (channelId) {
+        // If we already know this creator, maybe boost them (future logic)
+        // If they are new, add to suggestions
+        if (!creators[channelId] && !suggestions.find(s => s.channelId === channelId)) {
+          suggestions.push({
+            channelId,
+            reason: `Suggested alongside ${currentChannelName || 'current video'}`,
+            status: 'new'
+          });
+        }
+      }
+    }
+  }
+  await Storage.saveSuggestions(suggestions);
+}
+
 function initWatcher() {
   const video = document.querySelector('video');
   if (!video) return;
@@ -78,6 +105,9 @@ function initWatcher() {
       currentChannelId = channelInfo.id || 'unknown';
       currentChannelName = channelInfo.name;
     }
+    
+    // Scrape sidebar after a short delay
+    setTimeout(scrapeSidebar, 5000);
   }
 
   video.ontimeupdate = () => logWatch(video);

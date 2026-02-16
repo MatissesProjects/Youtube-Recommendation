@@ -1,9 +1,9 @@
 import { Creator, HistoryEntry } from './storage';
 
 export const Algorithm = {
-  calculateLoyaltyScore(creator: Creator, history: HistoryEntry[]): number {
+  calculateMetrics(creator: Creator, history: HistoryEntry[]): { score: number, frequency: number } {
     const creatorHistory = history.filter(h => h.channelId === creator.id);
-    if (creatorHistory.length === 0) return 0;
+    if (creatorHistory.length === 0) return { score: 0, frequency: 0 };
 
     // Frequency: How many total videos watched?
     const frequency = creatorHistory.length;
@@ -31,7 +31,10 @@ export const Algorithm = {
       }
     }
 
-    return Math.round(Math.min(score, 100));
+    return {
+      score: Math.round(Math.min(score, 100)),
+      frequency: frequency
+    };
   },
 
   async updateAllScores(creators: Record<string, Creator>, history: HistoryEntry[]): Promise<Record<string, Creator>> {
@@ -39,7 +42,9 @@ export const Algorithm = {
     for (const id in updatedCreators) {
       const creator = updatedCreators[id];
       if (creator) {
-        creator.loyaltyScore = this.calculateLoyaltyScore(creator, history);
+        const metrics = this.calculateMetrics(creator, history);
+        creator.loyaltyScore = metrics.score;
+        creator.frequency = metrics.frequency;
       }
     }
     return updatedCreators;
