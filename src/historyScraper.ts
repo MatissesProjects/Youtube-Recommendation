@@ -1,6 +1,6 @@
 import { Storage, Creator } from './storage';
 
-console.log('History scraper active...');
+console.log('The Curator: History scraper loaded.');
 
 function injectImportButton() {
   if (document.getElementById('curator-import-btn')) return;
@@ -24,52 +24,104 @@ function injectImportButton() {
   btn.onclick = async () => {
     btn.textContent = 'Importing...';
     btn.disabled = true;
-    await scrapeHistory();
-    btn.textContent = 'Import Complete!';
-    setTimeout(() => {
-      btn.textContent = 'Import History to The Curator';
-      btn.disabled = false;
-    }, 3000);
+    try {
+      await scrapeHistory();
+    } catch (e) {
+      console.error('The Curator: Scrape failed', e);
+      alert('Error during import. Check console for details.');
+    }
+    btn.textContent = 'Import History to The Curator';
+    btn.disabled = false;
   };
 
   document.body.appendChild(btn);
 }
 
 async function scrapeHistory() {
-  const items = document.querySelectorAll('ytd-video-renderer');
-  console.log(`Found ${items.length} videos in history.`);
+  // Target both old (ytd-video-renderer) and new (yt-lockup-view-model) YouTube components
+  const items = document.querySelectorAll('ytd-video-renderer, yt-lockup-view-model');
+  
+  console.log(`The Curator: Processing ${items.length} items.`);
+
+  if (items.length === 0) {
+    alert("No videos found. YouTube's layout might have changed. Try scrolling down.");
+    return;
+  }
 
   const creators = await Storage.getCreators();
+  const historyEntries: any[] = [];
   let newCount = 0;
+  let skippedCount = 0;
+  let errorCount = 0;
 
-  for (const item of items) {
-    const titleElement = item.querySelector('#video-title');
-    const channelElement = item.querySelector('#channel-name a');
-    
-    if (titleElement && channelElement) {
-      const videoId = (titleElement.getAttribute('href') || '').match(/v=(.*?)($|&)/)?.[1];
-      const channelId = channelElement.getAttribute('href');
-      const channelName = (channelElement.textContent || '').trim();
+  for (const item of Array.from(items)) {
+    // ... existing link extraction logic ...
+    const links = Array.from(item.querySelectorAll('a'));
+    const videoLink = links.find(a => a.getAttribute('href')?.includes('watch?v='));
+    const videoId = videoLink ? (videoLink.getAttribute('href') || '').match(/v=(.*?)($|&)/)?.[1] : null;
 
-      if (videoId && channelId && !creators[channelId]) {
+    let channelLink = links.find(a => {
+        const href = a.getAttribute('href') || '';
+        return (href.includes('/@') || href.includes('/channel/') || href.includes('/user/')) && !href.includes('watch?v=');
+    });
+
+    let channelName = '';
+    let channelId = '';
+
+    if (channelLink) {
+        channelId = channelLink.getAttribute('href') || '';
+        channelName = (channelLink.textContent || '').trim();
+    } else {
+        const metadataRows = item.querySelectorAll('.yt-content-metadata-view-model__metadata-row, yt-content-metadata-view-model');
+        for (const row of Array.from(metadataRows)) {
+            const firstSpan = row.querySelector('span');
+            if (firstSpan && firstSpan.textContent && !firstSpan.textContent.includes('views') && !firstSpan.textContent.includes('ago')) {
+                channelName = firstSpan.textContent.trim();
+                channelId = '/@' + channelName.replace(/\s+/g, '');
+                break;
+            }
+        }
+    }
+
+    if (videoId && channelId && channelName) {
+      if (!creators[channelId]) {
         creators[channelId] = {
           id: channelId,
           name: channelName,
           loyaltyScore: 0
         };
         newCount++;
+      } else {
+        skippedCount++;
       }
+
+      // Track 2: Seed History
+      historyEntries.push({
+        videoId,
+        channelId,
+        watchTime: 600, // Assume 10 mins (seeded value)
+        totalDuration: 600, // Assume 100% completion for seeded history
+        timestamp: Date.now() - (historyEntries.length * 1000) // Spread them out slightly
+      });
+
+      (item as HTMLElement).style.outline = '2px solid green';
+    } else {
+      errorCount++;
+      (item as HTMLElement).style.outline = '2px solid orange';
     }
   }
   
   await chrome.storage.local.set({ creators });
-  alert(`Imported ${newCount} new creators to your local database!`);
+  await Storage.bulkAddHistory(historyEntries);
+  alert(`Import Finished!\n- Videos Processed: ${items.length}\n- New Creators: ${newCount}\n- History Entries Seeded: ${historyEntries.length}`);
 }
 
-// Keep trying to inject until the page is ready
-const injectionInterval = setInterval(() => {
-  if (document.body) {
-    injectImportButton();
-    // We don't clear interval because YouTube is a SPA and the button might be removed on navigation
+setTimeout(injectImportButton, 2000);
+
+let lastUrl = location.href;
+setInterval(() => {
+  if (location.href !== lastUrl) {
+    lastUrl = location.href;
+    setTimeout(injectImportButton, 2000);
   }
 }, 2000);
