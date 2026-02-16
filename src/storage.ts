@@ -4,6 +4,12 @@ export interface Creator {
   lastUploadDate?: number;
   loyaltyScore: number;
   frequency: number;
+  keywords?: Record<string, number>; // "coding": 5, "tutorial": 2
+}
+
+export interface InterestProfile {
+  topKeywords: Record<string, number>;
+  totalWatches: number;
 }
 
 export interface HistoryEntry {
@@ -12,6 +18,7 @@ export interface HistoryEntry {
   watchTime: number; // in seconds
   totalDuration: number; // in seconds
   timestamp: number;
+  tags?: string[];
 }
 
 export interface Suggestion {

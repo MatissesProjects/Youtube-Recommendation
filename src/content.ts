@@ -31,6 +31,20 @@ function getChannelInfo() {
   return null;
 }
 
+function getVideoKeywords(): string[] {
+  // Scrape keywords from meta tags or title
+  const metaKeywords = document.querySelector('meta[name="keywords"]');
+  if (metaKeywords) {
+    const content = metaKeywords.getAttribute('content');
+    if (content) return content.split(',').map(s => s.trim().toLowerCase());
+  }
+
+  // Fallback: simple title extraction (exclude common stop words)
+  const title = document.title.replace(' - YouTube', '').toLowerCase();
+  const stopWords = new Set(['the', 'a', 'an', 'in', 'on', 'of', 'for', 'to', 'and', 'video', 'youtube']);
+  return title.split(/\s+/).filter(w => w.length > 3 && !stopWords.has(w));
+}
+
 async function logWatch(video: HTMLVideoElement) {
   if (hasLoggedCurrentVideo || !currentVideoId || !currentChannelId) return;
 
@@ -43,12 +57,16 @@ async function logWatch(video: HTMLVideoElement) {
   if (completionRatio > 0.8 || currentTime > 600) {
     console.log(`The Curator: Logging watch for ${currentVideoId} by ${currentChannelName}`);
     
+    const keywords = getVideoKeywords();
+    console.log('The Curator: Extracted keywords:', keywords);
+
     const entry: HistoryEntry = {
       videoId: currentVideoId,
       channelId: currentChannelId,
       watchTime: currentTime,
       totalDuration: duration,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      tags: keywords
     };
 
     await Storage.addHistoryEntry(entry);
@@ -56,12 +74,19 @@ async function logWatch(video: HTMLVideoElement) {
     const creators = await Storage.getCreators();
     const existing = creators[currentChannelId];
     
+    // Update creator's keyword profile
+    const existingKeywords = existing?.keywords || {};
+    keywords.forEach(k => {
+      existingKeywords[k] = (existingKeywords[k] || 0) + 1;
+    });
+
     const creator: Creator = {
       id: currentChannelId,
       name: currentChannelName || 'Unknown',
       loyaltyScore: existing ? existing.loyaltyScore : 0,
       frequency: (existing ? existing.frequency : 0) + 1,
-      lastUploadDate: existing?.lastUploadDate
+      lastUploadDate: existing?.lastUploadDate,
+      keywords: existingKeywords
     };
     await Storage.saveCreator(creator);
 
