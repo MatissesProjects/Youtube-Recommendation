@@ -15,13 +15,13 @@
 *Setup the project skeleton and storage layer.*
 
 * [ ] **Initialize Project**
-* [ ] Set up Vite + React (or vanilla TS) + CRXJS (for extension HMR).
+* [ ] vanilla TS, HTML, CSS.
 * [ ] Create `manifest.json` (Manifest V3).
 * [ ] Define permissions: `storage`, `activeTab`, `scripting`, `alarms` (for background jobs).
 
 
-* [ ] **Database Layer (IndexedDB)**
-* [ ] Install `idb` (lightweight wrapper).
+* [ ] **Database Layer (web based storage)**
+* [ ] Explore using chrome memory for this
 * [ ] **Schema Definition:**
 * [ ] `creators`: `id` (channelId), `name`, `lastUploadDate`, `loyaltyScore`.
 * [ ] `history`: `videoId`, `channelId`, `watchTime`, `totalDuration`, `timestamp`.

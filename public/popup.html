@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>The Curator</title>
+  <style>
+    body {
+      width: 350px;
+      padding: 15px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      font-size: 1.4em;
+      margin-top: 0;
+      color: #333;
+    }
+    #status {
+      font-size: 0.9em;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    .creator-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px;
+      background: white;
+      margin-bottom: 5px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .creator-item .name {
+      font-weight: 500;
+    }
+    .creator-item .score {
+      color: #c00;
+      font-weight: bold;
+    }
+    .actions {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      flex: 1;
+      padding: 8px;
+      cursor: pointer;
+      background-color: #065fd4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    button:hover {
+      background-color: #054fb0;
+    }
+    button#import-btn {
+      background-color: #606060;
+    }
+  </style>
+</head>
+<body>
+  <h1>The Curator</h1>
+  <div id="status">Initializing...</div>
+  <div id="dashboard">
+    <h3>Top Loyalties</h3>
+    <div id="creators-list">
+      <p>Loading...</p>
+    </div>
+  </div>
+  <div class="actions">
+    <button id="import-btn">Import History</button>
+    <button id="refresh-btn">Refresh</button>
+    <button id="discover-btn">Discover New</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
