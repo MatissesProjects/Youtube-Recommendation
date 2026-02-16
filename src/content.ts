@@ -1,12 +1,10 @@
 import { Storage, HistoryEntry, Creator, Suggestion } from './storage';
 
-console.log('The Curator content script loaded.');
+console.log('The Curator: Watcher script active.');
 
 let currentVideoId: string | null = null;
 let currentChannelId: string | null = null;
 let currentChannelName: string | null = null;
-let watchStartTime: number = 0;
-let lastLoggedVideoId: string | null = null;
 let hasLoggedCurrentVideo = false;
 
 function getVideoId() {
@@ -15,12 +13,20 @@ function getVideoId() {
 }
 
 function getChannelInfo() {
-  const channelLink = document.querySelector('ytd-video-owner-renderer a.yt-simple-endpoint');
-  if (channelLink) {
-    const href = channelLink.getAttribute('href');
-    const name = (channelLink.textContent || '').trim();
-    // href is usually /@channelname or /channel/ID
-    return { id: href, name: name };
+  // Newer YouTube layout selectors for channel link
+  const selectors = [
+    'ytd-video-owner-renderer a.yt-simple-endpoint',
+    '#owner #channel-name a',
+    'ytd-video-secondary-info-renderer #channel-name a'
+  ];
+  
+  for (const selector of selectors) {
+    const link = document.querySelector(selector);
+    if (link) {
+      const href = link.getAttribute('href');
+      const name = (link.textContent || '').trim();
+      if (href && name) return { id: href, name: name };
+    }
   }
   return null;
 }
@@ -30,11 +36,12 @@ async function logWatch(video: HTMLVideoElement) {
 
   const duration = video.duration;
   const currentTime = video.currentTime;
+  if (!duration || isNaN(duration)) return;
+
   const completionRatio = currentTime / duration;
 
-  // Logic: Only log "watch" if (currentTime / duration) > 0.8 (80% completion) OR time > 10 mins (600s)
   if (completionRatio > 0.8 || currentTime > 600) {
-    console.log(`Logging watch for ${currentVideoId} by ${currentChannelName}`);
+    console.log(`The Curator: Logging watch for ${currentVideoId} by ${currentChannelName}`);
     
     const entry: HistoryEntry = {
       videoId: currentVideoId,
@@ -46,84 +53,121 @@ async function logWatch(video: HTMLVideoElement) {
 
     await Storage.addHistoryEntry(entry);
 
-    // Also update/add creator
     const creators = await Storage.getCreators();
-    const existingCreator = creators[currentChannelId];
+    const existing = creators[currentChannelId];
     
     const creator: Creator = {
       id: currentChannelId,
       name: currentChannelName || 'Unknown',
-      loyaltyScore: existingCreator ? existingCreator.loyaltyScore : 0, // Score calculation will happen in Track 3
-      lastUploadDate: existingCreator?.lastUploadDate
+      loyaltyScore: existing ? existing.loyaltyScore : 0,
+      frequency: (existing ? existing.frequency : 0) + 1,
+      lastUploadDate: existing?.lastUploadDate
     };
     await Storage.saveCreator(creator);
 
     hasLoggedCurrentVideo = true;
-    lastLoggedVideoId = currentVideoId;
   }
 }
 
 async function scrapeSidebar() {
-  const sidebarItems = document.querySelectorAll('ytd-compact-video-renderer, ytd-rich-item-renderer');
+  // Look for any video-like items in the sidebar or below the player
+  const sidebarItems = document.querySelectorAll('ytd-compact-video-renderer, ytd-rich-item-renderer, ytd-video-renderer, yt-lockup-view-model');
+  console.log(`The Curator: Sidebar scan found ${sidebarItems.length} items.`);
+  
   const suggestions: Suggestion[] = await Storage.getSuggestions();
   const creators = await Storage.getCreators();
+  let addedCount = 0;
   
   for (const item of Array.from(sidebarItems)) {
-    const channelLink = item.querySelector('ytd-channel-name a, #channel-name a, .ytd-channel-name a') as HTMLAnchorElement;
+    const links = Array.from(item.querySelectorAll('a'));
+    const channelLink = links.find(a => {
+      const href = a.getAttribute('href') || '';
+      return (href.includes('/@') || href.includes('/channel/')) && !href.includes('watch?v=');
+    });
+
     if (channelLink) {
       const channelId = channelLink.getAttribute('href');
       const channelName = (channelLink.textContent || '').trim();
-      
       if (channelId) {
-        // If we already know this creator, maybe boost them (future logic)
-        // If they are new, add to suggestions
-        if (!creators[channelId] && !suggestions.find(s => s.channelId === channelId)) {
+        const isKnown = !!creators[channelId];
+        const isAlreadySuggested = !!suggestions.find(s => s.channelId === channelId);
+
+        if (!isKnown && !isAlreadySuggested) {
           suggestions.push({
             channelId,
             reason: `Suggested alongside ${currentChannelName || 'current video'}`,
             status: 'new'
           });
+          addedCount++;
+          
+          // Visual indicator
+          (item as HTMLElement).style.position = 'relative';
+          const indicator = document.createElement('div');
+          indicator.className = 'curator-found-dot';
+          indicator.style.cssText = 'width:10px; height:10px; background:#2ba640; border-radius:50%; position:absolute; top:5px; right:5px; z-index:100; border:1px solid white;';
+          item.appendChild(indicator);
+        } else {
+          // If known, show a different color dot (blue for "recognized")
+          (item as HTMLElement).style.position = 'relative';
+          const indicator = document.createElement('div');
+          indicator.style.cssText = 'width:8px; height:8px; background:#065fd4; border-radius:50%; position:absolute; top:5px; right:5px; z-index:100; opacity: 0.5;';
+          item.appendChild(indicator);
         }
       }
     }
   }
-  await Storage.saveSuggestions(suggestions);
+  
+  if (addedCount > 0) {
+    console.log(`The Curator: Added ${addedCount} new suggestions.`);
+    await Storage.saveSuggestions(suggestions);
+  } else {
+    console.log('The Curator: Sidebar scan complete. All creators already known or suggested.');
+  }
 }
 
 function initWatcher() {
   const video = document.querySelector('video');
-  if (!video) return;
-
   const videoId = getVideoId();
-  if (videoId && videoId !== currentVideoId) {
+  
+  if (!video || !videoId) {
+    console.log('The Curator: Waiting for video player...');
+    return;
+  }
+
+  if (videoId !== currentVideoId) {
     currentVideoId = videoId;
     hasLoggedCurrentVideo = false;
     
-    // Try to get channel info
-    const channelInfo = getChannelInfo();
-    if (channelInfo) {
-      currentChannelId = channelInfo.id || 'unknown';
-      currentChannelName = channelInfo.name;
-    }
-    
-    // Scrape sidebar after a short delay
-    setTimeout(scrapeSidebar, 5000);
+    // Retry finding channel info since it loads after the video
+    let retries = 0;
+    const infoInterval = setInterval(() => {
+      const info = getChannelInfo();
+      if (info || retries > 10) {
+        if (info) {
+          currentChannelId = info.id;
+          currentChannelName = info.name;
+          console.log(`The Curator: Now watching ${currentChannelName} (${currentVideoId})`);
+        }
+        clearInterval(infoInterval);
+        setTimeout(scrapeSidebar, 3000);
+      }
+      retries++;
+    }, 1000);
   }
 
   video.ontimeupdate = () => logWatch(video);
 }
 
-// YouTube is a SPA, so we need to watch for navigation
+// Global observer for navigation (YouTube is a SPA)
 let lastUrl = location.href;
-new MutationObserver(() => {
-  const url = location.href;
-  if (url !== lastUrl) {
-    lastUrl = url;
-    currentVideoId = null;
-    hasLoggedCurrentVideo = false;
-    initWatcher();
+const navObserver = new MutationObserver(() => {
+  if (location.href !== lastUrl) {
+    lastUrl = location.href;
+    console.log('The Curator: Navigation detected');
+    setTimeout(initWatcher, 2000);
   }
-}).observe(document, { subtree: true, childList: true });
+});
+navObserver.observe(document, { subtree: true, childList: true });
 
-// Initial call
-setTimeout(initWatcher, 2000); // Give it some time to load
+// Initial Load
+setTimeout(initWatcher, 3000);

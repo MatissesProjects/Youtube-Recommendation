@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function renderCreators() {
     const creators = await Storage.getCreators();
+    const creatorCount = Object.keys(creators).length;
+    if (statusElement) statusElement.textContent = `Tracking ${creatorCount} creators.`;
+
     const sortedCreators = Object.values(creators)
       .filter(c => c.frequency >= 2)
       .sort((a, b) => b.loyaltyScore - a.loyaltyScore);
