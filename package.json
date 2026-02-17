@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npx esbuild src/background.ts src/content.ts src/popup.ts src/historyScraper.ts src/discoveryScraper.ts --bundle --outdir=dist --sourcemap --target=esnext && powershell -Command \"Copy-Item -Path 'public/*' -Destination 'dist' -Recurse -Force\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run"
   },
   "repository": {
     "type": "git",
@@ -23,6 +23,7 @@
     "@types/chrome": "^0.1.36",
     "@types/node": "^25.2.3",
     "esbuild": "^0.27.3",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   }
 }

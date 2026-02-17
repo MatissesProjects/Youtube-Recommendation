@@ -77,10 +77,10 @@
 ## 🧪 Track 6: Testing & Polish 🔄
 
 * [x] **Edge Case: The Binge Watcher** ✅
-    * [x] Implemented "Session Cap" (Max 3 frequency points per creator per day).
 * [ ] **Edge Case: Shorts** (Currently tracked, decide on filtering).
+* [x] **Unit Testing:** Vitest suite for core algorithm. ✅
+* [x] **Privacy Audit:** Verified local-only storage and safe RSS polling. ✅
 * [ ] **Data Export:** Allow users to download their local database.
-* [ ] **Privacy Check:** Final audit of storage usage.
 
 ---
 
