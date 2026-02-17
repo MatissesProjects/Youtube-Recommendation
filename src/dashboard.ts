@@ -9,7 +9,7 @@ async function initGalaxy() {
     const history = await Storage.getHistory();
     const creators = Object.values(creatorsMap).filter(c => c.frequency >= 1);
     
-    // ... nodes and links implementation remains same ...
+    const nodes = creators.map(c => ({
         id: c.id,
         name: c.name,
         val: Math.max(2, (c.loyaltyScore / 10)), // Size based on loyalty
