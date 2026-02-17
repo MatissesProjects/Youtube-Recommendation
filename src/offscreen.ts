@@ -17,12 +17,12 @@ let embedder: any = null;
 
 async function getEmbedder() {
     if (!embedder) {
-        console.log('Offscreen: Loading embedding model (Xenova/all-MiniLM-L6-v2)...');
+        // Reduced logging to avoid noise
         try {
             embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-            console.log('Offscreen: Model loaded successfully.');
         } catch (err: any) {
-            console.error('Offscreen: Failed to load model:', err);
+            // Log once as a warning, then stay quiet. AIService will handle the fallback.
+            console.warn('Offscreen: WASM model load failed (likely CSP). Using fallback.');
             embedder = null;
             throw err;
         }
