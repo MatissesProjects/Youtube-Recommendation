@@ -67,7 +67,15 @@ async function updateCreatorEmbeddings() {
   console.log('Background: Syncing semantic embeddings...');
   const creators = await Storage.getCreators();
   const topCreators = Object.values(creators)
-    .sort((a, b) => b.loyaltyScore - a.loyaltyScore)
+    .sort((a, b) => {
+      if (b.loyaltyScore !== a.loyaltyScore) {
+        return b.loyaltyScore - a.loyaltyScore;
+      }
+      if (b.frequency !== a.frequency) {
+        return b.frequency - a.frequency;
+      }
+      return a.name.localeCompare(b.name);
+    })
     .slice(0, 20); // Focus on top 20 for performance
 
   for (const creator of topCreators) {
