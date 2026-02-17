@@ -388,6 +388,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.runtime.sendMessage({ action: 'refreshScores' }, (response) => {
       if (response && response.success) {
         renderCreators();
+        renderTopTopics();
+        renderSuggestions();
+        renderRabbitHoleStatus();
         if (statusElement) statusElement.textContent = 'Scores updated!';
       }
     });

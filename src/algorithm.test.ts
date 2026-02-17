@@ -81,4 +81,50 @@ describe('Algorithm.calculateMetrics', () => {
     // Penalty 0.2x should bring it down significantly
     expect(metrics.score).toBeLessThan(20);
   });
+
+  it('should apply content farm penalty for low true duration ratio', () => {
+    const today = Date.now();
+    const history: HistoryEntry[] = [];
+    
+    // Watch 10 videos, but with 60% fluff (True Duration = 40% of Total)
+    for (let i = 0; i < 10; i++) {
+      history.push({
+        videoId: `v${i}`,
+        channelId: '/@test',
+        watchTime: 100,
+        totalDuration: 100,
+        trueDuration: 40, // 40/100 = 0.4 (< 0.5 threshold)
+        timestamp: today
+      });
+    }
+
+    const metrics = Algorithm.calculateMetrics(mockCreator, history);
+    
+    // Base score would be 73 (70 for completion + 3 capped freq)
+    // 0.5x penalty should be ~37
+    expect(metrics.score).toBe(37);
+  });
+
+  it('should apply minor penalty for moderate fluff (50-70% true duration)', () => {
+    const today = Date.now();
+    const history: HistoryEntry[] = [];
+    
+    // Watch 10 videos with 40% fluff (True Duration = 60% of Total)
+    for (let i = 0; i < 10; i++) {
+      history.push({
+        videoId: `v${i}`,
+        channelId: '/@test',
+        watchTime: 100,
+        totalDuration: 100,
+        trueDuration: 60, // 60/100 = 0.6 (between 0.5 and 0.7)
+        timestamp: today
+      });
+    }
+
+    const metrics = Algorithm.calculateMetrics(mockCreator, history);
+    
+    // Base score would be 73
+    // 0.8x penalty should be ~58
+    expect(metrics.score).toBe(58);
+  });
 });
