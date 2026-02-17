@@ -2,6 +2,7 @@ import { Storage, HistoryEntry, Creator, Suggestion } from './storage';
 import { CONFIG, SELECTORS } from './constants';
 import { SponsorSegment } from './types';
 import { GenerativeService } from './generativeService';
+import { extractKeywords } from './utils';
 
 console.log('The Curator: Watcher script active.');
 
@@ -182,25 +183,7 @@ async function logWatch(video: HTMLVideoElement) {
     const videoTitle = getVideoTitle();
     const description = getVideoDescription();
     
-    const descWords = description.toLowerCase()
-      .replace(/[^\w\s]/g, ' ')
-      .split(/\s+/)
-      .filter(w => w.length > 4);
-    
-    const wordFreq: Record<string, number> = {};
-    const stopWordsSet = new Set(CONFIG.STOP_WORDS);
-    
-    descWords.forEach(w => {
-      if (!stopWordsSet.has(w)) {
-        wordFreq[w] = (wordFreq[w] || 0) + 1;
-      }
-    });
-    
-    const descKeywords = Object.entries(wordFreq)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 15)
-      .map(([word]) => word);
-
+    const descKeywords = extractKeywords(description, CONFIG.STOP_WORDS);
     const combinedKeywords = [...new Set([...keywords, ...descKeywords])];
 
     const entry: HistoryEntry = {

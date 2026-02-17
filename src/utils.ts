@@ -4,3 +4,21 @@ export function isBridgeCreator(suggestionReason: string, topTopics: string[]): 
     const matches = topTopics.filter(topic => reasonLower.includes(topic.toLowerCase()));
     return matches.length >= 2;
 }
+
+export function extractKeywords(text: string, stopWords: string[]): string[] {
+    const stopWordsSet = new Set(stopWords);
+    const words = text.toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 4 && !stopWordsSet.has(w));
+    
+    const wordFreq: Record<string, number> = {};
+    words.forEach(w => {
+        wordFreq[w] = (wordFreq[w] || 0) + 1;
+    });
+    
+    return Object.entries(wordFreq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 15)
+      .map(([word]) => word);
+}

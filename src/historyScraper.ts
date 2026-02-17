@@ -1,4 +1,6 @@
 import { Storage, Creator } from './storage';
+import { extractKeywords } from './utils';
+import { CONFIG } from './constants';
 
 console.log('The Curator: History scraper loaded.');
 
@@ -86,13 +88,16 @@ async function scrapeHistory() {
 
     if (videoId && channelId && channelName) {
       const videoTitle = videoLink?.getAttribute('title') || videoLink?.textContent?.trim() || 'Imported Video';
+      const descriptionSnippet = (item.querySelector('#description-text')?.textContent || '').trim();
+      const tags = extractKeywords(`${videoTitle} ${descriptionSnippet}`, CONFIG.STOP_WORDS);
 
       if (!creators[channelId]) {
         creators[channelId] = {
           id: channelId,
           name: channelName,
           loyaltyScore: 0,
-          frequency: 0 // Initialize frequency
+          frequency: 0,
+          keywords: {}
         };
         newCount++;
         
@@ -103,6 +108,15 @@ async function scrapeHistory() {
         skippedCount++;
       }
 
+      // Update creator's keyword profile with historical data
+      const creator = creators[channelId];
+      if (creator) {
+        if (!creator.keywords) creator.keywords = {};
+        tags.forEach(t => {
+            creator.keywords![t] = (creator.keywords![t] || 0) + 1;
+        });
+      }
+
       // Track 2: Seed History
       historyEntries.push({
         videoId,
@@ -110,7 +124,8 @@ async function scrapeHistory() {
         title: videoTitle,
         watchTime: 600, // Assume 10 mins (seeded value)
         totalDuration: 600, // Assume 100% completion for seeded history
-        timestamp: Date.now() - (historyEntries.length * 1000) // Spread them out slightly
+        timestamp: Date.now() - (historyEntries.length * 1000), // Spread them out slightly
+        tags: tags
       });
 
       (item as HTMLElement).style.outline = '2px solid green';
