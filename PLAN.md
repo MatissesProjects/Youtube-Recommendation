@@ -74,24 +74,24 @@
 
 ---
 
-## 🧪 Track 6: Testing & Polish 🔄
+## 🧪 Track 6: Testing & Polish ✅
 
 * [x] **Edge Case: The Binge Watcher** ✅
-* [ ] **Edge Case: Shorts** (Currently tracked, decide on filtering).
+* [x] **Edge Case: Shorts** (Skipped)
 * [x] **Unit Testing:** Vitest suite for core algorithm. ✅
 * [x] **Privacy Audit:** Verified local-only storage and safe RSS polling. ✅
-* [ ] **Data Export:** Allow users to download their local database.
+* [x] **Data Export:** (Skipped)
 
 ---
 
-## 🚀 Track 7: The Intelligence Upgrade (Phase 2)
+## 🚀 Track 7: The Intelligence Upgrade (Phase 2) 🔄
 
 *Moving from keywords to concepts using local AI.*
 
-* [ ] **Semantic "Vibe" Engine**
-    * [ ] **Tech:** Integrate `Transformers.js` (e.g., `Xenova/all-MiniLM-L6-v2`).
-    * [ ] **Vector Store:** Upgrade IndexedDB to store `embedding` arrays for top creators.
-    * [ ] **Logic:** Calculate "Cosine Similarity" between your history and potential new suggestions.
+* [x] **Semantic "Vibe" Engine** ✅
+    * [x] Integrated `Transformers.js` via Offscreen Document.
+    * [x] Semantic vector storage in IndexedDB.
+    * [x] Hybrid ranking (Keyword + Cosine Similarity).
 * [ ] **"The Reason" (Generative UI)**
     * [ ] **Tech:** Chrome Built-in AI (`window.ai` / Gemini Nano) OR simple template logic.
     * [ ] **Task:** Summarize *why* a creator is being suggested. (e.g., "Similar pacing to [Creator A] but focuses on [Topic B]").

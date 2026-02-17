@@ -1,7 +1,45 @@
 import { Storage } from './storage';
 import { Algorithm } from './algorithm';
+import { VectorDB } from './vectorDb';
 
 console.log('Background service worker started.');
+
+// Offscreen management
+let creating: any; // A global promise to avoid race conditions
+async function setupOffscreenDocument(path: string) {
+  const offscreenUrl = chrome.runtime.getURL(path);
+  const existingContexts = await (chrome.runtime as any).getContexts({
+    contextTypes: ['OFFSCREEN_DOCUMENT'],
+    documentUrls: [offscreenUrl]
+  });
+
+  if (existingContexts.length > 0) return;
+
+  if (creating) {
+    await creating;
+  } else {
+    creating = (chrome as any).offscreen.createDocument({
+      url: path,
+      reasons: ['LOCAL_STORAGE'], // We use this for AI/heavy tasks
+      justification: 'Running local AI models for semantic embeddings'
+    });
+    await creating;
+    creating = null;
+  }
+}
+
+async function getEmbedding(text: string): Promise<number[] | null> {
+  await setupOffscreenDocument('offscreen.html');
+  const response = await chrome.runtime.sendMessage({
+    target: 'offscreen',
+    action: 'generateEmbedding',
+    text
+  });
+  if (response && response.success) {
+    return response.embedding;
+  }
+  return null;
+}
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
@@ -25,12 +63,37 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 });
 
+async function updateCreatorEmbeddings() {
+  console.log('Background: Syncing semantic embeddings...');
+  const creators = await Storage.getCreators();
+  const topCreators = Object.values(creators)
+    .sort((a, b) => b.loyaltyScore - a.loyaltyScore)
+    .slice(0, 20); // Focus on top 20 for performance
+
+  for (const creator of topCreators) {
+    const existing = await VectorDB.getEmbedding(creator.id);
+    if (!existing) {
+      // Create a "vibe" string from keywords and name
+      const keywords = Object.keys(creator.keywords || {}).slice(0, 10).join(' ');
+      const vibeText = `${creator.name} ${keywords}`;
+      console.log(`Background: Generating embedding for ${creator.name}`);
+      const embedding = await getEmbedding(vibeText);
+      if (embedding) {
+        await VectorDB.saveEmbedding(creator.id, embedding);
+      }
+    }
+  }
+}
+
 async function updateScores() {
   console.log('Updating loyalty scores...');
   const creators = await Storage.getCreators();
   const history = await Storage.getHistory();
   const updatedCreators = await Algorithm.updateAllScores(creators, history);
   await chrome.storage.local.set({ creators: updatedCreators });
+  
+  // Trigger embedding sync
+  updateCreatorEmbeddings();
 }
 
 async function pollRSS() {

@@ -8,7 +8,8 @@
     "activeTab",
     "scripting",
     "alarms",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "offscreen"
   ],
   "host_permissions": [
     "https://*.youtube.com/*",

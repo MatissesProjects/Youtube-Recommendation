@@ -1,8 +1,10 @@
 import { Storage } from './storage';
+import { VectorDB, cosineSimilarity } from './vectorDb';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Popup loaded.');
   const statusElement = document.getElementById('status');
+  const aiStatusElement = document.getElementById('ai-status');
   const creatorsList = document.getElementById('creators-list');
   const suggestionsList = document.getElementById('suggestions-list');
   const topicsList = document.getElementById('topics-list');
@@ -113,27 +115,64 @@ document.addEventListener('DOMContentLoaded', async () => {
     const suggestions = await Storage.getSuggestions();
     const creators = await Storage.getCreators();
     
-    // Calculate global interest fingerprint
-    const keywordMap: Record<string, number> = {};
-    Object.values(creators).forEach(c => {
-      if (c.keywords) {
-        Object.entries(c.keywords).forEach(([word, count]) => {
-          keywordMap[word] = (keywordMap[word] || 0) + count;
-        });
-      }
-    });
+    // 1. Calculate User Vibe Centroid
+    const allEmbeddings = await VectorDB.getAllEmbeddings();
+    const topCreatorIds = new Set(Object.values(creators)
+      .sort((a, b) => b.loyaltyScore - a.loyaltyScore)
+      .slice(0, 10)
+      .map(c => c.id));
+    
+    const userEmbeddings = allEmbeddings.filter(e => topCreatorIds.has(e.id));
+    let centroid: number[] | null = null;
 
-    const newSuggestions = suggestions
-      .filter(s => s.status === 'new')
-      .map(s => {
-        // Simple scoring: how many words in the "reason" match our top keywords?
-        let score = 0;
+    if (userEmbeddings.length > 0) {
+      const dim = userEmbeddings[0]!.embedding.length;
+      centroid = new Array(dim).fill(0);
+      userEmbeddings.forEach(e => {
+        for (let i = 0; i < dim; i++) {
+          centroid![i] += e.embedding[i] || 0;
+        }
+      });
+      for (let i = 0; i < dim; i++) {
+        centroid![i] /= userEmbeddings.length;
+      }
+    }
+
+    const newSuggestions = suggestions.filter(s => s.status === 'new');
+    
+    // 2. Rank suggestions
+    const rankedSuggestions = [];
+    for (const s of newSuggestions) {
+      let score = 0;
+      if (centroid) {
+        // Request embedding for suggestion reason/name
+        const response = await chrome.runtime.sendMessage({
+          target: 'offscreen',
+          action: 'generateEmbedding',
+          text: `${s.channelId} ${s.reason}`
+        });
+        if (response && response.success) {
+          score = cosineSimilarity(centroid, response.embedding);
+        }
+      } else {
+        // Fallback to keyword matching if no embeddings yet
+        const keywordMap: Record<string, number> = {};
+        Object.values(creators).forEach(c => {
+          if (c.keywords) {
+            Object.entries(c.keywords).forEach(([word, count]) => {
+              keywordMap[word] = (keywordMap[word] || 0) + count;
+            });
+          }
+        });
         const reasonWords = s.reason.toLowerCase().split(/\s+/);
         reasonWords.forEach(word => {
-          if (keywordMap[word]) score += keywordMap[word];
+          if (keywordMap[word]) score += keywordMap[word] / 100; // Normalized
         });
-        return { ...s, matchScore: score };
-      })
+      }
+      rankedSuggestions.push({ ...s, matchScore: score });
+    }
+
+    const displaySuggestions = rankedSuggestions
       .sort((a, b) => b.matchScore - a.matchScore)
       .slice(0, 5);
 
@@ -211,6 +250,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderTopTopics();
   renderRecentHits();
   renderLatestVideos();
+
+  // Update AI Status
+  const allEmbeddings = await VectorDB.getAllEmbeddings();
+  if (aiStatusElement) {
+    if (allEmbeddings.length > 0) {
+      aiStatusElement.textContent = `Semantic Engine: Active (${allEmbeddings.length} vibes indexed)`;
+    } else {
+      aiStatusElement.textContent = 'Semantic Engine: Ready (Waiting for data)';
+    }
+  }
+
   if (statusElement) {
     statusElement.textContent = 'The Curator is active.';
   }
