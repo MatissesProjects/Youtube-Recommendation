@@ -9,7 +9,7 @@ export const GenerativeService = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: 'llama3', 
+                    model: 'qwen3:8b', 
                     prompt: prompt,
                     stream: false,
                     options: { num_predict: 50 }
@@ -38,7 +38,7 @@ export const GenerativeService = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: 'llama3',
+                    model: 'qwen3:8b',
                     prompt: prompt,
                     stream: false
                 })
@@ -58,7 +58,15 @@ export const GenerativeService = {
     },
 
     async summarizeCreatorInfo(creatorName: string, searchResults: string): Promise<string> {
-        const prompt = `Based on these search results for the YouTube creator "${creatorName}", provide a concise 2-sentence summary of what their content is about and their main niche. Do not use buzzwords. \n\nResults: ${searchResults.substring(0, 2000)}`;
+        const prompt = `Based on these search results for the YouTube creator "${creatorName}", generate a structured "Vibe Report" in the following format:
+        
+        1. **The Hook**: One catchy sentence describing their unique appeal.
+        2. **Core Topics**: Three comma-separated main topics they cover.
+        3. **The Vibe**: Are they chaotic, educational, relaxing, or intense?
+        
+        Do not use buzzwords. Be specific and insightful.
+        
+        Results: ${searchResults.substring(0, 3000)}`;
 
         try {
             const response = await fetch('http://localhost:11434/api/generate', {
