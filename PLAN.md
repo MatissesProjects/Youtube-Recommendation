@@ -25,52 +25,58 @@
 *Mechanisms to gather user history and creator activity.*
 
 * [x] **The Watcher (Content Script)**
+    * [x] Completion tracking (80% / 10 min rule).
+    * [x] **Interest Profiling:** Meta-keyword and title extraction. ✅
 * [x] **The Scraper (History Importer)**
-    * [x] Bulk history seeding (Every video in history = 1 frequency count).
+    * [x] Bulk history seeding (Frequency + Creator Discovery).
 * [x] **The Tracker (RSS Poller)**
-* [x] **The Side-Eye (Sidebar Scraper)** 🆕
-    * [ ] Scrape creators suggested in the YouTube sidebar while watching.
-    * [ ] Boost "Loyalty" if a high-score creator appears in suggestions.
-    * [ ] Add new creators to `suggestions` with reason "Suggested alongside [Current Creator]".
+    * [x] Background Alarm (runs once/day).
+    * [x] **Video Alerts:** Capture latest video title/ID for high-loyalty creators. ✅
+* [x] **The Side-Eye (Sidebar Scraper)**
+    * [x] Scrape suggested creators while watching.
+    * [x] Visual indicators (Green/Blue dots) on YouTube UI. ✅
 
 ---
 
-## 🧠 Track 3: The Algorithm (The Brain) 🔄
+## 🧠 Track 3: The Algorithm (The Brain) ✅
 
 *Implementing the scoring logic and weighting systems.*
 
 * [x] **Core Metrics Calculation**
 * [x] **The Decay Engine (5-Month Rule)**
 * [x] **The "Creator Score" Function**
-* [ ] **Quality Filter** 🆕
-    * [ ] Filter "Top Loyalties" to only show creators with `frequency >= 2` to remove one-off noise.
+* [x] **Quality Filter:** Only show creators with `frequency >= 2`.
+* [x] **Interest Fingerprinting:** Match new suggestions against top keywords. ✅
 
 ---
 
-## 🕵️ Track 4: The Discovery Engine (The Scout) 🔄
+## 🕵️ Track 4: The Discovery Engine (The Scout) ✅
 
 *Finding new content based on the "High Score" creators.*
 
 * [x] **Fingerprinting**
 * [x] **Social Graph Scraper**
     * [x] Scrape "Channels" tab of top creators.
-* [ ] **Related Video Discovery**
-    * [ ] Use the **Side-Eye** data to build a map of related creators.
+* [x] **Smart Fresh Feed:** Rank discovery results by interest match. ✅
 
 ---
 
-## 🎨 Track 5: User Interface (The Face) 🔄
+## 🎨 Track 5: User Interface (The Face) ✅
 
 *How the user interacts with the extension.*
 
 * [x] **Popup Dashboard**
-* [ ] **The "Fresh Feed"**
-* [x] **Control Panel**
+    * [x] **Topic Cloud:** Visual keyword representation. ✅
+    * [x] **Recent Success:** Track recently finished titles. ✅
+    * [x] **Latest Alerts:** New videos from favorite creators. ✅
+* [x] **The "Fresh Feed":** Clickable discovery links.
+* [x] **Control Panel:** Refresh, Discover, and Nuke buttons.
 
 ---
 
-## 🧪 Track 6: Testing & Polish
+## 🧪 Track 6: Testing & Polish 🔄
 
 * [ ] **Edge Case: The Binge Watcher**
-* [ ] **Edge Case: Shorts**
-* [ ] **Privacy Check**
+* [ ] **Edge Case: Shorts** (Currently tracked, decide on filtering).
+* [ ] **Data Export:** Allow users to download their local database.
+* [ ] **Privacy Check:** Final audit of storage usage.
