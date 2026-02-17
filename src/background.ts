@@ -173,16 +173,26 @@ async function startResearch(targetIds?: string[]) {
       .slice(0, 5);
   }
 
+  console.log(`Background: Starting Stealth Research for ${list.length} creators.`);
+
   for (const creator of list) {
     // Precise query as requested
     const query = `youtube channel ${creator.name} general channel information`;
+    
+    console.log(`Background: Researching ${creator.name}...`);
     chrome.tabs.create({ 
       url: `https://www.google.com/search?q=${encodeURIComponent(query)}`, 
       active: false 
     });
-    // Add a small delay between opening tabs to avoid being flagged
-    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Wait for a significant, randomized "human-like" delay
+    // 15-30 seconds between searches is much safer
+    const delay = 15000 + (Math.random() * 15000);
+    console.log(`Background: Waiting ${Math.round(delay/1000)}s before next search to avoid rate limits.`);
+    await new Promise(resolve => setTimeout(resolve, delay));
   }
+  
+  console.log('Background: Stealth Research batch complete.');
 }
 
 async function startDiscovery() {
