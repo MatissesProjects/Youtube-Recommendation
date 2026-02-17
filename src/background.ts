@@ -121,7 +121,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   else if (message.action === 'startResearch') startResearch(message.ids);
   else if (message.action === 'researchAll') researchAll();
   else if (message.action === 'processResearch') {
-    processResearch(message.creatorName, message.data);
+    processResearch(message.creatorName, message.data, sender.tab?.id);
   }
 });
 
@@ -132,13 +132,20 @@ async function researchAll() {
   await startResearch(ids);
 }
 
-async function processResearch(name: string, data: string) {
+async function processResearch(name: string, data: string, tabId?: number) {
   const creators = await Storage.getCreators();
   // Match by name
   const creator = Object.values(creators).find(c => c.name === name);
   if (creator) {
     console.log(`Background: Processing research for ${name}`);
     await EnrichmentService.enrichCreator(creator.id, data);
+    
+    if (tabId) {
+      // Close the tab automatically after successful processing
+      setTimeout(() => {
+        chrome.tabs.remove(tabId);
+      }, 1000);
+    }
   }
 }
 

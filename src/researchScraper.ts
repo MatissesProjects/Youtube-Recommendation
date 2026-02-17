@@ -22,6 +22,12 @@ async function scrapeGoogle() {
     if (!creatorName) return;
 
     console.log(`The Curator: Researching "${creatorName}"...`);
+    
+    // Visual indicator for the user
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed; top:0; left:0; right:0; background:#1a73e8; color:white; padding:10px; text-align:center; z-index:2147483647; font-weight:bold; font-family:sans-serif;';
+    banner.textContent = `The Curator is researching "${creatorName}"... This tab will close automatically.`;
+    document.body.appendChild(banner);
 
     // Scrape snippets from the search results
     const snippets = Array.from(document.querySelectorAll('.VwiC3b, .bAWN9b, .MUF6yc'))
