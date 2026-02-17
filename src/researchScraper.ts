@@ -29,22 +29,41 @@ async function scrapeGoogle() {
     banner.textContent = `The Curator is researching "${creatorName}"... This tab will close automatically.`;
     document.body.appendChild(banner);
 
-    // Scrape snippets from the search results
-    const snippets = Array.from(document.querySelectorAll('.VwiC3b, .bAWN9b, .MUF6yc'))
+    // 1. Try to find the AI Overview (SGE) content
+    // Google uses various classes, but often it's in a container with specific data attributes or within a "complementary" role
+    const aiOverviewSelectors = [
+        '[data-itp="ai_overview"]',
+        '.M7vSre',
+        '.X79vV',
+        '[role="complementary"] div'
+    ];
+    
+    let aiText = '';
+    for (const selector of aiOverviewSelectors) {
+        const el = document.querySelector(selector);
+        // Ensure it's the actual AI block by checking for common text
+        if (el && (el.textContent?.includes('AI Overview') || el.textContent?.includes('Generative AI'))) {
+            aiText = el.textContent.trim();
+            console.log('The Curator: Found AI Overview content!');
+            break;
+        }
+    }
+
+    // 2. Scrape traditional snippets as fallback/supplement
+    const snippets = Array.from(document.querySelectorAll('.VwiC3b, .bAWN9b, .MUF6yc, .g'))
         .map(el => el.textContent)
         .filter(Boolean)
         .join('\n\n');
 
-    if (snippets.length > 100) {
-        console.log(`The Curator: Found ${snippets.length} characters of research data.`);
+    const combinedData = aiText ? `AI OVERVIEW:\n${aiText}\n\nSEARCH RESULTS:\n${snippets}` : snippets;
+
+    if (combinedData.length > 100) {
+        console.log(`The Curator: Found ${combinedData.length} characters of research data.`);
         
-        // Find the channel ID from the storage to match the name
-        // This is a bit tricky since we only have the name in the query.
-        // We'll send a message to background to find the ID and then enrich.
         chrome.runtime.sendMessage({
             action: 'processResearch',
             creatorName: creatorName,
-            data: snippets
+            data: combinedData
         });
 
         // Close the tab after a few seconds to clean up
