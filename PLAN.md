@@ -76,7 +76,41 @@
 
 ## 🧪 Track 6: Testing & Polish 🔄
 
-* [ ] **Edge Case: The Binge Watcher**
+* [x] **Edge Case: The Binge Watcher** ✅
+    * [x] Implemented "Session Cap" (Max 3 frequency points per creator per day).
 * [ ] **Edge Case: Shorts** (Currently tracked, decide on filtering).
 * [ ] **Data Export:** Allow users to download their local database.
 * [ ] **Privacy Check:** Final audit of storage usage.
+
+---
+
+## 🚀 Track 7: The Intelligence Upgrade (Phase 2)
+
+*Moving from keywords to concepts using local AI.*
+
+* [ ] **Semantic "Vibe" Engine**
+    * [ ] **Tech:** Integrate `Transformers.js` (e.g., `Xenova/all-MiniLM-L6-v2`).
+    * [ ] **Vector Store:** Upgrade IndexedDB to store `embedding` arrays for top creators.
+    * [ ] **Logic:** Calculate "Cosine Similarity" between your history and potential new suggestions.
+* [ ] **"The Reason" (Generative UI)**
+    * [ ] **Tech:** Chrome Built-in AI (`window.ai` / Gemini Nano) OR simple template logic.
+    * [ ] **Task:** Summarize *why* a creator is being suggested. (e.g., "Similar pacing to [Creator A] but focuses on [Topic B]").
+* [ ] **The "Bridge" Finder**
+    * [ ] Identify top 2 distinct topic clusters in user history.
+    * [ ] Search for creators that tag *both* clusters.
+
+
+---
+
+
+## 📊 Track 8: Advanced Visualization
+
+*Helping the user understand their own data.*
+
+* [ ] **The Galaxy Graph**
+    * [ ] **Tech:** D3.js or React-Force-Graph.
+    * [ ] **Visual:** Nodes = Creators. Edges = Shared topics/viewers.
+    * [ ] **Goal:** Show the user their "Clusters" and the empty space between them.
+* [ ] **"Rabbit Hole" Mode**
+    * [ ] A button to "Deep Dive" into a specific topic.
+    * [ ] Temporarily boosts a specific keyword weight by 10x for the next 5 suggestions.

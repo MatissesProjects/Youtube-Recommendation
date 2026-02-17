@@ -6,7 +6,19 @@ export const Algorithm = {
     if (creatorHistory.length === 0) return { score: 0, frequency: 0 };
 
     // Frequency: How many total videos watched?
-    const frequency = creatorHistory.length;
+    const rawFrequency = creatorHistory.length;
+
+    // Binge-Watcher Session Cap: Max 3 frequency points per day
+    const dayMap: Record<number, number> = {};
+    creatorHistory.forEach(h => {
+      const day = Math.floor(h.timestamp / (1000 * 60 * 60 * 24));
+      dayMap[day] = (dayMap[day] || 0) + 1;
+    });
+
+    let effectiveFrequency = 0;
+    Object.values(dayMap).forEach(count => {
+      effectiveFrequency += Math.min(count, 3); // Cap each day at 3 points
+    });
 
     // Recency: Days since last watch
     const lastWatch = Math.max(...creatorHistory.map(h => h.timestamp));
@@ -14,11 +26,11 @@ export const Algorithm = {
 
     // Loyalty Ratio (Simplified for now: Average completion of last 10 videos)
     const recentHistory = creatorHistory.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
-    const avgCompletion = recentHistory.reduce((acc, h) => acc + (h.watchTime / h.totalDuration), 0) / recentHistory.length;
+    const avgCompletion = recentHistory.reduce((acc, h) => acc + (h.watchTime / (h.totalDuration || 1)), 0) / recentHistory.length;
 
     // Base Score (0-100)
-    let score = avgCompletion * 80; // Up to 80 points from completion
-    score += Math.min(frequency, 20); // Up to 20 points from frequency
+    let score = avgCompletion * 70; // Up to 70 points from completion
+    score += Math.min(effectiveFrequency, 30); // Up to 30 points from effective frequency (capped at 30 days of unique engagement)
 
     // Decay Engine (5-Month Rule)
     const fiveMonthsInDays = 5 * 30;
@@ -33,7 +45,7 @@ export const Algorithm = {
 
     return {
       score: Math.round(Math.min(score, 100)),
-      frequency: frequency
+      frequency: rawFrequency
     };
   },
 
