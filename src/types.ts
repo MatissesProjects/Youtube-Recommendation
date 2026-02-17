@@ -12,6 +12,11 @@ export interface Creator {
   keywords?: Record<string, number>;
 }
 
+export interface Annotation {
+  timestamp: number;
+  note: string;
+}
+
 export interface HistoryEntry {
   videoId: string;
   channelId: string;
@@ -20,6 +25,9 @@ export interface HistoryEntry {
   totalDuration: number;
   timestamp: number;
   tags?: string[];
+  annotations?: Annotation[];
+  summary?: string;
+  transcript?: string;
 }
 
 export interface Suggestion {

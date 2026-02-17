@@ -43,5 +43,46 @@ export const GenerativeService = {
             reason: `Semantic match with ${topCreatorName}${topicStr}.`, 
             source: 'System' 
         };
+    },
+
+    async summarizeTranscript(transcript: string): Promise<{summary: string, source: string}> {
+        const prompt = `Summarize the following video transcript in a short bulleted list of 3-5 key takeaways. Be concise and objective.\n\nTranscript: ${transcript.substring(0, 5000)}`; // Truncate for local LLM limits
+
+        // 1. Try Chrome Built-in AI
+        try {
+            // @ts-ignore
+            if (typeof window.ai !== 'undefined' && window.ai.createTextSession) {
+                // @ts-ignore
+                const session = await window.ai.createTextSession();
+                const result = await session.prompt(prompt);
+                return { summary: result.trim(), source: 'window.ai' };
+            }
+        } catch (e) {
+            console.log('GenerativeService: window.ai summarization failed.');
+        }
+
+        // 2. Try Ollama
+        try {
+            const response = await fetch('http://localhost:11434/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: 'llama3',
+                    prompt: prompt,
+                    stream: false
+                })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                return { summary: data.response.trim(), source: 'Ollama' };
+            }
+        } catch (e) {
+            console.log('GenerativeService: Ollama summarization failed.');
+        }
+
+        return { 
+            summary: "AI summarization unavailable. Please check window.ai or Ollama settings.", 
+            source: 'System' 
+        };
     }
 };

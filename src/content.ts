@@ -193,6 +193,61 @@ async function scrapeSidebar() {
   }
 }
 
+function injectNoteUI() {
+  if (document.getElementById('curator-note-btn')) return;
+
+  const rightControls = document.querySelector('.ytp-right-controls');
+  if (!rightControls) return;
+
+  const noteBtn = document.createElement('button');
+  noteBtn.id = 'curator-note-btn';
+  noteBtn.className = 'ytp-button';
+  noteBtn.innerHTML = '📝';
+  noteBtn.title = 'Take a Curator Note';
+  noteBtn.style.fontSize = '1.2em';
+  noteBtn.style.verticalAlign = 'top';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'curator-note-overlay';
+  overlay.style.cssText = 'display:none; position:absolute; bottom:60px; right:10px; background:#fff; padding:10px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.3); z-index:9999; width:250px;';
+  
+  const textarea = document.createElement('textarea');
+  textarea.placeholder = 'Your note...';
+  textarea.style.cssText = 'width:100%; height:80px; margin-bottom:5px; border:1px solid #ddd; border-radius:4px; font-family:sans-serif; padding:5px; box-sizing:border-box;';
+  
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Save Note';
+  saveBtn.style.cssText = 'width:100%; background:#1a73e8; color:white; border:none; padding:5px; border-radius:4px; cursor:pointer; font-weight:bold;';
+
+  overlay.appendChild(textarea);
+  overlay.appendChild(saveBtn);
+  document.querySelector('.html5-video-player')?.appendChild(overlay);
+
+  noteBtn.onclick = () => {
+    overlay.style.display = overlay.style.display === 'none' ? 'block' : 'none';
+    if (overlay.style.display === 'block') textarea.focus();
+  };
+
+  saveBtn.onclick = async () => {
+    const video = document.querySelector('video');
+    const videoId = getVideoId();
+    if (video && videoId && textarea.value.trim()) {
+      await Storage.addAnnotation(videoId, {
+        timestamp: video.currentTime,
+        note: textarea.value.trim()
+      });
+      console.log('The Curator: Note saved at', video.currentTime);
+      textarea.value = '';
+      overlay.style.display = 'none';
+      // Visual feedback
+      noteBtn.innerHTML = '✅';
+      setTimeout(() => { noteBtn.innerHTML = '📝'; }, 2000);
+    }
+  };
+
+  rightControls.insertBefore(noteBtn, rightControls.firstChild);
+}
+
 function initWatcher() {
   const video = document.querySelector('video');
   const videoId = getVideoId();
@@ -201,6 +256,9 @@ function initWatcher() {
     console.log('The Curator: Waiting for video player...');
     return;
   }
+
+  // Inject Note UI
+  injectNoteUI();
 
   if (videoId !== currentVideoId) {
     currentVideoId = videoId;

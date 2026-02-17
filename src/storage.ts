@@ -79,5 +79,31 @@ export const Storage = {
 
   async clearAll(): Promise<void> {
     await chrome.storage.local.clear();
+  },
+
+  async addAnnotation(videoId: string, annotation: { timestamp: number, note: string }): Promise<void> {
+    const data = await chrome.storage.local.get('history');
+    const history = (data.history as HistoryEntry[]) || [];
+    const entry = history.find(h => h.videoId === videoId);
+    if (entry) {
+      if (!entry.annotations) entry.annotations = [];
+      entry.annotations.push(annotation);
+      await chrome.storage.local.set({ history });
+    }
+  },
+
+  async updateVideoMetadata(videoId: string, metadata: { summary?: string, transcript?: string }): Promise<void> {
+    const data = await chrome.storage.local.get('history');
+    const history = (data.history as HistoryEntry[]) || [];
+    const entry = history.find(h => h.videoId === videoId);
+    if (entry) {
+      if (metadata.summary) entry.summary = metadata.summary;
+      if (metadata.transcript) entry.transcript = metadata.transcript;
+      await chrome.storage.local.set({ history });
+    }
+  },
+
+  async exportAllData(): Promise<any> {
+    return await chrome.storage.local.get(null);
   }
 };
