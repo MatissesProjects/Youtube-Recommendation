@@ -78,14 +78,6 @@
 
 ---
 
-## 🔍 Track 14: Deep Vector Search (In Progress) 🔄
-*Finding knowledge using concepts, not just keywords.*
-* [ ] **Knowledge Embedding Pipeline:** Automatically generate semantic embeddings for History Entries.
-* [ ] **Concept Search:** Search history by "Vibe" rather than exact string matching.
-* [ ] **Search UI:** Implement a semantic search bar in the Galaxy Dashboard.
-
----
-
 ## 🛡️ Track 10: The "True Signal" Pipeline (Anti-Noise) 🆕
 *Cleaning the data ingestion to ensure quality over clickbait.*
 * [ ] **SponsorBlock Integration:** Query API to subtract fluff from "True Watch Time."
@@ -117,3 +109,12 @@
 * [ ] **The Context Dial:** Energy-level filters (Low Energy/Chill vs. High Energy/Learn).
 * [ ] **Time Budgeting:** Filter "Fresh Feed" based on available time + SponsorBlock data.
 
+---
+
+## 🔍 Track 14: Deep Vector Search (In Progress) 🔄
+*Finding knowledge using concepts, not just keywords.*
+* [ ] **Knowledge Embedding Pipeline:** Automatically generate semantic embeddings for History Entries.
+* [ ] **Concept Search:** Search history by "Vibe" rather than exact string matching.
+* [ ] **Search UI:** Implement a semantic search bar in the Galaxy Dashboard.
+
+---
