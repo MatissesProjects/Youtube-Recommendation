@@ -7,12 +7,16 @@ async function scrapeFeaturedChannels() {
   console.log(`Found ${channelLinks.length} featured channels.`);
 
   const suggestions: Suggestion[] = await Storage.getSuggestions();
+  const creators = await Storage.getCreators();
   
   for (const link of channelLinks) {
     const channelId = link.getAttribute('href');
     const channelName = (link.querySelector('#channel-title')?.textContent || '').trim();
 
-    if (channelId && !suggestions.find(s => s.channelId === channelId)) {
+    const isKnown = !!creators[channelId || ''];
+    const isAlreadySuggested = !!suggestions.find(s => s.channelId === channelId);
+
+    if (channelId && !isKnown && !isAlreadySuggested) {
       suggestions.push({
         channelId: channelId,
         reason: `Endorsed by current channel`,

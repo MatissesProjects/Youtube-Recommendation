@@ -49,13 +49,14 @@ async function scrapeHistory() {
   }
 
   const creators = await Storage.getCreators();
+  const suggestions = await Storage.getSuggestions();
   const historyEntries: any[] = [];
   let newCount = 0;
   let skippedCount = 0;
   let errorCount = 0;
 
   for (const item of Array.from(items)) {
-    // ... existing link extraction logic ...
+    // ... link extraction logic ...
     const links = Array.from(item.querySelectorAll('a'));
     const videoLink = links.find(a => a.getAttribute('href')?.includes('watch?v='));
     const videoId = videoLink ? (videoLink.getAttribute('href') || '').match(/v=(.*?)($|&)/)?.[1] : null;
@@ -84,13 +85,20 @@ async function scrapeHistory() {
     }
 
     if (videoId && channelId && channelName) {
+      const videoTitle = videoLink?.getAttribute('title') || videoLink?.textContent?.trim() || 'Imported Video';
+
       if (!creators[channelId]) {
         creators[channelId] = {
           id: channelId,
           name: channelName,
-          loyaltyScore: 0
+          loyaltyScore: 0,
+          frequency: 0 // Initialize frequency
         };
         newCount++;
+        
+        // Remove from suggestions if it was there
+        const suggIndex = suggestions.findIndex(s => s.channelId === channelId);
+        if (suggIndex !== -1) suggestions.splice(suggIndex, 1);
       } else {
         skippedCount++;
       }
@@ -99,6 +107,7 @@ async function scrapeHistory() {
       historyEntries.push({
         videoId,
         channelId,
+        title: videoTitle,
         watchTime: 600, // Assume 10 mins (seeded value)
         totalDuration: 600, // Assume 100% completion for seeded history
         timestamp: Date.now() - (historyEntries.length * 1000) // Spread them out slightly
@@ -112,6 +121,7 @@ async function scrapeHistory() {
   }
   
   await chrome.storage.local.set({ creators });
+  await Storage.saveSuggestions(suggestions);
   await Storage.bulkAddHistory(historyEntries);
   alert(`Import Finished!\n- Videos Processed: ${items.length}\n- New Creators: ${newCount}\n- History Entries Seeded: ${historyEntries.length}`);
 }
