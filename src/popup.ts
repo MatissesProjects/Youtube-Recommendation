@@ -22,7 +22,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const sortedCreators = Object.values(creators)
       .filter(c => c.frequency >= 2)
-      .sort((a, b) => b.loyaltyScore - a.loyaltyScore);
+      .sort((a, b) => {
+        if (b.loyaltyScore !== a.loyaltyScore) {
+          return b.loyaltyScore - a.loyaltyScore;
+        }
+        // Tie-breaker 1: Total Frequency
+        if (b.frequency !== a.frequency) {
+          return b.frequency - a.frequency;
+        }
+        // Tie-breaker 2: Alphabetical
+        return a.name.localeCompare(b.name);
+      });
 
     if (creatorsList) {
       if (sortedCreators.length === 0) {
