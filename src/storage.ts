@@ -1,6 +1,32 @@
-import { Creator, HistoryEntry, Suggestion } from './types';
+export interface RabbitHoleState {
+  topic: string;
+  expiresAt: number;
+}
 
 export const Storage = {
+  // ... existing methods ...
+
+  async getRabbitHole(): Promise<RabbitHoleState | null> {
+    const data = await chrome.storage.local.get('rabbitHole');
+    const state = data.rabbitHole as RabbitHoleState;
+    if (state && state.expiresAt > Date.now()) {
+      return state;
+    }
+    return null;
+  },
+
+  async setRabbitHole(topic: string, durationMinutes: number): Promise<void> {
+    const state: RabbitHoleState = {
+      topic,
+      expiresAt: Date.now() + (durationMinutes * 60 * 1000)
+    };
+    await chrome.storage.local.set({ rabbitHole: state });
+  },
+
+  async clearRabbitHole(): Promise<void> {
+    await chrome.storage.local.remove('rabbitHole');
+  },
+
   async getCreators(): Promise<Record<string, Creator>> {
     const data = await chrome.storage.local.get('creators');
     return (data.creators as Record<string, Creator>) || {};

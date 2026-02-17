@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const discoverBtn = document.getElementById('discover-btn');
   const galaxyBtn = document.getElementById('galaxy-btn');
   const nukeBtn = document.getElementById('nuke-btn');
+  const rabbitHoleStatus = document.getElementById('rabbit-hole-status');
 
   function escapeHtml(unsafe: string): string {
     return unsafe
@@ -86,17 +87,109 @@ document.addEventListener('DOMContentLoaded', async () => {
         topicsList.innerHTML = `
           <div class="topic-cloud">
             ${sortedKeywords.map(([word, count]) => `
-              <span class="topic-tag" style="font-size: ${Math.max(0.7, Math.min(1.2, 0.7 + count * 0.05))}em">
-                ${word}
+              <span class="topic-tag dive-trigger" data-topic="${escapeHtml(word)}" title="Dive into '${word}'" style="cursor: pointer; font-size: ${Math.max(0.7, Math.min(1.2, 0.7 + count * 0.05))}em">
+                ${word} 🕳️
               </span>
             `).join('')}
           </div>
         `;
+
+        topicsList.querySelectorAll('.dive-trigger').forEach(tag => {
+          tag.addEventListener('click', async (e) => {
+            const topic = (e.target as HTMLElement).getAttribute('data-topic');
+            if (topic) {
+              await Storage.setRabbitHole(topic, CONFIG.RABBIT_HOLE.DURATION_MINUTES);
+              renderRabbitHoleStatus();
+              renderSuggestions();
+            }
+          });
+        });
+      }
+    }
+  }
+
+  async function renderRabbitHoleStatus() {
+    const rabbitHole = await Storage.getRabbitHole();
+    if (rabbitHoleStatus) {
+      if (rabbitHole) {
+        const minutesLeft = Math.ceil((rabbitHole.expiresAt - Date.now()) / 60000);
+        rabbitHoleStatus.style.display = 'block';
+        rabbitHoleStatus.innerHTML = `
+          <div style="background: #3c4043; color: white; padding: 8px; border-radius: 4px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span>🐇 <strong>${escapeHtml(rabbitHole.topic)}</strong> Mode (${minutesLeft}m)</span>
+            <button id="exit-rabbit-hole" style="background: rgba(255,255,255,0.2); border: none; color: white; cursor: pointer; padding: 2px 6px; border-radius: 4px;">Exit</button>
+          </div>
+        `;
+        document.getElementById('exit-rabbit-hole')?.addEventListener('click', async () => {
+          await Storage.clearRabbitHole();
+          renderRabbitHoleStatus();
+          renderSuggestions();
+        });
+      } else {
+        rabbitHoleStatus.style.display = 'none';
       }
     }
   }
 
   async function renderRecentHits() {
+    // ... existing implementation
+  }
+
+  // ... renderLatestVideos ...
+
+  // ... renderVibeExplorer ...
+
+  // ... listeners ...
+
+  async function renderSuggestions() {
+    // ... brain icon logic ...
+    const suggestions = await Storage.getSuggestions();
+    const creators = await Storage.getCreators();
+    const rabbitHole = await Storage.getRabbitHole();
+    
+    // ... centroid calculation ...
+
+    // ... newSuggestions filtering ...
+    
+    const rankedSuggestions = [];
+    for (const s of newSuggestions) {
+      let score = 0;
+      // ... embedding/keyword logic ...
+
+      if (centroid) {
+         // ... embedding calculation ...
+      } else {
+        const keywordMap: Record<string, number> = {};
+        Object.values(creators).forEach(c => {
+          if (c.keywords) {
+            Object.entries(c.keywords).forEach(([word, count]) => {
+              keywordMap[word] = (keywordMap[word] || 0) + count;
+            });
+          }
+        });
+        const reasonWords = s.reason.toLowerCase().split(/\s+/);
+        reasonWords.forEach(word => {
+          let weight = keywordMap[word] ? keywordMap[word] / 100 : 0;
+          // RABBIT HOLE BOOST
+          if (rabbitHole && word.includes(rabbitHole.topic.toLowerCase())) {
+            weight += CONFIG.RABBIT_HOLE.BOOST_FACTOR; // Massive boost
+          }
+          score += weight;
+        });
+      }
+
+      // Semantic boost for Rabbit Hole if using embeddings
+      if (centroid && rabbitHole && s.reason.toLowerCase().includes(rabbitHole.topic.toLowerCase())) {
+         score += 0.5; // Artificial boost to semantic score
+      }
+
+      // ... bridge logic ...
+      // ... AI reason generation ...
+
+      rankedSuggestions.push({ ...s, matchScore: score, aiReason, aiSource: source, isBridge });
+    }
+    // ... sort and render ...
+  }
     const history = await Storage.getHistory();
     const recent = history.filter(h => h.title).reverse().slice(0, 3);
 
