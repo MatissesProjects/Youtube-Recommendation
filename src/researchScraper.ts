@@ -27,9 +27,7 @@ async function scrapeGoogle() {
     const snippets = Array.from(document.querySelectorAll('.VwiC3b, .bAWN9b, .MUF6yc'))
         .map(el => el.textContent)
         .filter(Boolean)
-        .join('
-
-');
+        .join('\n\n');
 
     if (snippets.length > 100) {
         console.log(`The Curator: Found ${snippets.length} characters of research data.`);
