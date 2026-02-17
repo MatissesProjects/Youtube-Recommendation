@@ -30,8 +30,21 @@ export const Algorithm = {
     const recentHistory = creatorHistory.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
     const avgCompletion = recentHistory.reduce((acc, h) => acc + (h.watchTime / (h.totalDuration || 1)), 0) / recentHistory.length;
 
+    // Content Farm Penalty (Fluff Check)
+    // If average true duration is less than 50% of total duration, it's likely a content farm or filler-heavy channel.
+    const avgFluffRatio = recentHistory.reduce((acc, h) => {
+      const ratio = h.trueDuration ? (h.trueDuration / (h.totalDuration || 1)) : 1;
+      return acc + ratio;
+    }, 0) / recentHistory.length;
+
     // Base Score
     let score = (avgCompletion * 70) + Math.min(effectiveFrequency, CONFIG.MAX_FREQUENCY_POINTS);
+
+    if (avgFluffRatio < 0.5) {
+      score *= 0.5; // Heavy penalty for content farms
+    } else if (avgFluffRatio < 0.7) {
+      score *= 0.8; // Minor penalty for filler-heavy channels
+    }
 
     // Decay Engine
     const decayThreshold = CONFIG.DECAY_MONTHS * 30;
