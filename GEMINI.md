@@ -29,6 +29,18 @@ This file tracks environment-specific configuration, lessons learned, and projec
 
 ## 💡 Lessons Learned
 
-1. **YouTube SPA Navigation:** YouTube uses client-side routing. Content scripts only run on initial load, so we use a `MutationObserver` on `location.href` to re-initialize our watchers when the user navigates between videos.
-2. **RSS Quota-Free Updates:** Using `https://www.youtube.com/feeds/videos.xml?channel_id=[ID]` allows us to check for new uploads without hitting the YouTube Data API quota.
-3. **Local-First Storage:** `chrome.storage.local` is preferred over `IndexedDB` for initial development due to its simpler API and sufficient capacity for text-based history logs.
+
+
+1.  **YouTube SPA Navigation:** YouTube uses client-side routing. Content scripts only run on initial load, so we use a `MutationObserver` on `location.href` to re-initialize our watchers when the user navigates between videos.
+
+2.  **RSS Quota-Free Updates:** Using `https://www.youtube.com/feeds/videos.xml?channel_id=[ID]` allows us to check for new uploads without hitting the YouTube Data API quota.
+
+3.  **Local-First Storage:** `chrome.storage.local` is preferred over `IndexedDB` for initial development due to its simpler API and sufficient capacity (enhanced by `unlimitedStorage` permission).
+
+4.  **Robust Link Detection:** YouTube frequently changes its DOM IDs and classes (e.g., the shift to `yt-lockup-view-model`). To remain resilient, we use pattern-based link detection (`a[href*="watch?v="]`) rather than strictly relying on class names.
+
+5.  **Binge-Watcher Mitigation:** "Loyalty" can be artificially skewed by watching many videos in a single session. We implemented a **Session Cap** in the algorithm that limits daily frequency contribution to 3 points per creator.
+
+6.  **Deep Keyword Extraction:** Beyond meta-tags, performing a frequency analysis on the video description provides a much richer Interest Profile, provided we filter out common "Social Noise" (e.g., subscribe, twitter, instagram).
+
+
