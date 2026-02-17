@@ -164,13 +164,26 @@ async function startResearch(targetIds?: string[]) {
   const creators = await Storage.getCreators();
   let list = [];
   
+  const isQualityEnriched = (c: any) => {
+    if (!c.enrichedDescription) return false;
+    const desc = c.enrichedDescription.toLowerCase();
+    // Allow re-researching if it's just the fallback or mentions "unknown"
+    if (desc === "search-enriched profile." || desc.includes('unknown creator')) return false;
+    return true;
+  };
+
   if (targetIds && targetIds.length > 0) {
-    list = targetIds.map(id => creators[id]).filter(Boolean);
+    list = targetIds.map(id => creators[id]).filter(c => c && !isQualityEnriched(c));
   } else {
     list = Object.values(creators)
       .sort((a, b) => b.loyaltyScore - a.loyaltyScore)
-      .filter(c => !c.enrichedDescription)
+      .filter(c => !isQualityEnriched(c))
       .slice(0, 5);
+  }
+
+  if (list.length === 0) {
+    console.log('Background: All requested creators are already quality-enriched. Skipping.');
+    return;
   }
 
   console.log(`Background: Starting Stealth Research for ${list.length} creators.`);
