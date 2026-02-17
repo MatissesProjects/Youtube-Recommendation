@@ -101,14 +101,27 @@
 ---
 
 
-## 📊 Track 8: Advanced Visualization
+## 📊 Track 8: Advanced Visualization ✅
+* [x] **The Galaxy Graph** ✅
+    * [x] Full-page force-directed graph dashboard.
+    * [x] Visualized creator clusters and shared topic links.
+* [x] **"Rabbit Hole" Mode** ✅
+    * [x] Temporary 10x topic boost.
+    * [x] Persistent state with 30m timeout.
 
-*Helping the user understand their own data.*
+---
 
-* [ ] **The Galaxy Graph**
-    * [ ] **Tech:** D3.js or React-Force-Graph.
-    * [ ] **Visual:** Nodes = Creators. Edges = Shared topics/viewers.
-    * [ ] **Goal:** Show the user their "Clusters" and the empty space between them.
-* [ ] **"Rabbit Hole" Mode**
-    * [ ] A button to "Deep Dive" into a specific topic.
-    * [ ] Temporarily boosts a specific keyword weight by 10x for the next 5 suggestions.
+## 🧠 Track 9: The "Second Brain" Integration (Future)
+
+*Turning passive watching into active knowledge.*
+
+* [ ] **Video Annotations**
+    * [ ] Add a "Note" button to the video player overlay.
+    * [ ] Save timestamps and user thoughts alongside the History Entry.
+* [ ] **Auto-Summarization (Local AI)**
+    * [ ] Use `window.ai` or Ollama to generate a "Key Takeaways" bullet list for long videos (>20m).
+    * [ ] Store summary in the local database for quick recall.
+* [ ] **Knowledge Export**
+    * [ ] **Markdown/Obsidian Export:** Generate a daily "Watch Log" with links, summaries, and notes.
+    * [ ] **JSON Dump:** Full database backup for portability.
+
