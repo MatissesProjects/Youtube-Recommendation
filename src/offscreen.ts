@@ -21,27 +21,27 @@ async function getEmbedder() {
         try {
             embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
             console.log('Offscreen: Model loaded successfully.');
-        } catch (err) {
+        } catch (err: any) {
             console.error('Offscreen: Failed to load model:', err);
+            embedder = null;
             throw err;
         }
     }
     return embedder;
 }
 
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.target !== 'offscreen') return;
 
     if (message.action === 'generateEmbedding') {
-        try {
-            const pipe = await getEmbedder();
+        getEmbedder().then(async (pipe) => {
             const output = await pipe(message.text, { pooling: 'mean', normalize: true });
             const embedding = Array.from(output.data);
             sendResponse({ success: true, embedding });
-        } catch (error: any) {
-            console.error('Offscreen Error:', error);
-            sendResponse({ success: false, error: error.message });
-        }
+        }).catch(error => {
+            console.error('Offscreen Runtime Error:', error);
+            sendResponse({ success: false, error: error.message || 'Model load failure' });
+        });
     }
     return true; // Keep channel open
 });

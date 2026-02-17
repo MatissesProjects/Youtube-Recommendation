@@ -24,12 +24,37 @@ export const AIService = {
   },
 
   async getEmbedding(text: string): Promise<number[] | null> {
-    await this.setupOffscreen();
-    const response = await chrome.runtime.sendMessage({
-      target: 'offscreen',
-      action: 'generateEmbedding',
-      text
-    });
-    return response?.success ? response.embedding : null;
+    // 1. Try Offscreen (transformers.js)
+    try {
+      await this.setupOffscreen();
+      const response = await chrome.runtime.sendMessage({
+        target: 'offscreen',
+        action: 'generateEmbedding',
+        text
+      });
+      if (response?.success) return response.embedding;
+    } catch (e) {
+      console.log('AIService: Offscreen embedding failed, trying Ollama...');
+    }
+
+    // 2. Fallback to Ollama
+    try {
+      const response = await fetch('http://localhost:11434/api/embeddings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'llama3', // or 'mxbai-embed-large' or whatever the user has
+          prompt: text
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return data.embedding;
+      }
+    } catch (e) {
+      console.log('AIService: Ollama embedding fallback failed.');
+    }
+
+    return null;
   }
 };
