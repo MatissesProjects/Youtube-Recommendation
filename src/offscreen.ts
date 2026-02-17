@@ -1,16 +1,30 @@
 import { pipeline, env } from '@xenova/transformers';
 
-// Configure transformers.js
-env.allowLocalModels = false; // We'll download from HuggingFace
+// Configure transformers.js for Chrome Extension environment
+env.allowLocalModels = false;
+env.allowRemoteModels = true;
 env.useBrowserCache = true;
+
+// Fix for "no available backend found" in some Chrome environments
+// We disable the WASM proxy and can optionally point to a CDN for WASM files
+if (env.backends && env.backends.onnx) {
+    env.backends.onnx.wasm.proxy = false;
+    // Pointing to CDN for WASM files if they are not bundled correctly
+    env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/';
+}
 
 let embedder: any = null;
 
 async function getEmbedder() {
     if (!embedder) {
-        console.log('Offscreen: Loading embedding model...');
-        embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-        console.log('Offscreen: Model loaded.');
+        console.log('Offscreen: Loading embedding model (Xenova/all-MiniLM-L6-v2)...');
+        try {
+            embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+            console.log('Offscreen: Model loaded successfully.');
+        } catch (err) {
+            console.error('Offscreen: Failed to load model:', err);
+            throw err;
+        }
     }
     return embedder;
 }
