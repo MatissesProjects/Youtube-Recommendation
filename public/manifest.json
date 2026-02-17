@@ -13,7 +13,8 @@
   ],
   "host_permissions": [
     "https://*.youtube.com/*",
-    "https://www.youtube.com/feeds/videos.xml*"
+    "https://www.youtube.com/feeds/videos.xml*",
+    "http://localhost/*"
   ],
   "action": {
     "default_popup": "popup.html"

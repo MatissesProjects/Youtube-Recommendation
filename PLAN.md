@@ -93,7 +93,7 @@
     * [x] Semantic vector storage in IndexedDB.
     * [x] Hybrid ranking (Keyword + Cosine Similarity).
 * [ ] **"The Reason" (Generative UI)**
-    * [ ] **Tech:** Chrome Built-in AI (`window.ai` / Gemini Nano) OR simple template logic.
+    * [ ] **Tech:** Chrome Built-in AI (`window.ai` / Gemini Nano) OR simple template logic. - if this doesnt work we will use a local llm ollama
     * [ ] **Task:** Summarize *why* a creator is being suggested. (e.g., "Similar pacing to [Creator A] but focuses on [Topic B]").
 * [ ] **The "Bridge" Finder**
     * [ ] Identify top 2 distinct topic clusters in user history.

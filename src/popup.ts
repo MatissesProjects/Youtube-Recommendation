@@ -1,5 +1,7 @@
 import { Storage, Creator } from './storage';
 import { VectorDB, cosineSimilarity } from './vectorDb';
+import { GenerativeService } from './generativeService';
+import { CONFIG } from './constants';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Popup loaded.');
@@ -195,11 +197,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       let aiReason = s.reason;
-      if (matchedCreator && score > 0.4) {
-        aiReason = `Semantically similar to <strong>${matchedCreator.name}</strong>`;
-        if (matchKeywords.length > 0) {
-          aiReason += ` (vibe: <em>${matchKeywords.join(', ')}</em>)`;
-        }
+      if (matchedCreator && score > CONFIG.SEMANTIC_MATCH_THRESHOLD) {
+        // Use Generative AI for the reason if we have a strong match
+        aiReason = await GenerativeService.generateReason(
+            s.channelId.replace('/@', '').replace('/', ''),
+            matchedCreator.name,
+            matchKeywords
+        );
       }
 
       rankedSuggestions.push({ ...s, matchScore: score, aiReason });
