@@ -16,8 +16,11 @@
         <p class="legend">Nodes are creators. Links represent shared topics.</p>
     </div>
     <div id="graph-container"></div>
-    <div id="controls">
-        <button id="reset-view" style="cursor:pointer; background:#1a73e8; color:white; border:none; padding:5px 10px; border-radius:4px; margin-bottom: 5px; width: 100%;">Reset View</button>
+        <div id="controls">
+            <input type="text" id="semantic-search" placeholder="Search by vibe... (e.g. React performance)" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd; margin-bottom: 10px; background: rgba(255,255,255,0.9);">
+            <div id="search-results" style="margin-bottom: 10px; max-height: 200px; overflow-y: auto;"></div>
+            <button id="reset-view"
+     style="cursor:pointer; background:#1a73e8; color:white; border:none; padding:5px 10px; border-radius:4px; margin-bottom: 5px; width: 100%;">Reset View</button>
         <button id="export-json" style="cursor:pointer; background:#606060; color:white; border:none; padding:5px 10px; border-radius:4px; margin-bottom: 5px; width: 100%;">Export JSON</button>
         <button id="export-obsidian" style="cursor:pointer; background:#673ab7; color:white; border:none; padding:5px 10px; border-radius:4px; width: 100%;">Export Obsidian</button>
     </div>

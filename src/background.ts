@@ -43,12 +43,40 @@ async function updateCreatorEmbeddings() {
   }
 }
 
+async function updateHistoryEmbeddings() {
+  console.log('Background: Syncing history semantic embeddings...');
+  const history = await Storage.getHistory();
+  // Focus on the most recent 50 entries for initial search capabilities
+  const recentHistory = history.slice(-50);
+
+  for (const entry of recentHistory) {
+    const vectorId = `video:${entry.videoId}`;
+    const existing = await VectorDB.getEmbedding(vectorId);
+    if (!existing) {
+      // Build a rich content string for the embedding
+      const notesText = (entry.annotations || []).map(a => a.note).join(' ');
+      const contentText = `${entry.title || ''} ${entry.summary || ''} ${notesText}`.trim();
+      
+      if (contentText.length > 10) {
+        console.log(`Background: Indexing video concepts for ${entry.title || entry.videoId}`);
+        const embedding = await AIService.getEmbedding(contentText);
+        if (embedding) {
+          await VectorDB.saveEmbedding(vectorId, embedding);
+        }
+      }
+    }
+  }
+}
+
 async function updateScores() {
   const creators = await Storage.getCreators();
   const history = await Storage.getHistory();
   const updatedCreators = await Algorithm.updateAllScores(creators, history);
   await chrome.storage.local.set({ creators: updatedCreators });
+  
+  // Trigger embedding syncs
   updateCreatorEmbeddings();
+  updateHistoryEmbeddings();
 }
 
 async function pollRSS() {

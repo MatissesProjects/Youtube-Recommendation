@@ -70,12 +70,19 @@
 
 ---
 
-## 📓 Track 9: The "Second Brain" (Content & Capture) 🔄
+## 📓 Track 9: The "Second Brain" (Content & Capture) ✅
 *Turning passive watching into active knowledge.*
-* [ ] **The Scribe:** Fetch transcripts via `youtube.com/api/timedtext`.
-* [ ] **Deep Vector Search:** Index transcripts for "Concept Search" (finding ideas inside videos).
-* [ ] **The Auto-Summarizer:** Use `window.ai` (Gemini Nano) for 5-bullet "Key Takeaways."
-* [ ] **Video Annotations:** Add a "Note" button to the player to save thoughts to history.
+* [x] **Video Annotations:** ✅ Injected "Note" button in YouTube player controls.
+* [x] **The Auto-Summarizer:** ✅ Pipeline for transcript-to-summary conversion via window.ai/Ollama.
+* [x] **Knowledge Export:** ✅ Markdown/Obsidian export with YAML metadata and JSON dump.
+
+---
+
+## 🔍 Track 14: Deep Vector Search (In Progress) 🔄
+*Finding knowledge using concepts, not just keywords.*
+* [ ] **Knowledge Embedding Pipeline:** Automatically generate semantic embeddings for History Entries.
+* [ ] **Concept Search:** Search history by "Vibe" rather than exact string matching.
+* [ ] **Search UI:** Implement a semantic search bar in the Galaxy Dashboard.
 
 ---
 
