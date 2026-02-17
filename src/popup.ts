@@ -197,16 +197,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       let aiReason = s.reason;
+      let source = 'System';
+
       if (matchedCreator && score > CONFIG.SEMANTIC_MATCH_THRESHOLD) {
-        // Use Generative AI for the reason if we have a strong match
-        aiReason = await GenerativeService.generateReason(
+        const result = await GenerativeService.generateReason(
             s.channelId.replace('/@', '').replace('/', ''),
             matchedCreator.name,
             matchKeywords
         );
+        aiReason = result.reason;
+        source = result.source;
       }
 
-      rankedSuggestions.push({ ...s, matchScore: score, aiReason });
+      rankedSuggestions.push({ ...s, matchScore: score, aiReason, aiSource: source });
     }
 
     const displaySuggestions = rankedSuggestions
@@ -220,7 +223,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         suggestionsList.innerHTML = displaySuggestions.map(s => `
           <div class="creator-item suggestion-item" data-id="${s.channelId}">
             <div class="info">
-              <a href="https://www.youtube.com${s.channelId}" target="_blank" class="name">${s.channelId.replace('/@', '').replace('/', '')}</a>
+              <a href="https://www.youtube.com${s.channelId}" target="_blank" class="name">
+                ${s.channelId.replace('/@', '').replace('/', '')}
+                ${s.aiSource !== 'System' ? `<span class="engine-badge">${s.aiSource}</span>` : ''}
+              </a>
               <span class="reason ai-insight">${s.aiReason}</span>
             </div>
             <div class="suggestion-actions">
