@@ -1,4 +1,4 @@
-import { Storage } from './storage';
+import { Storage, Creator } from './storage';
 import { VectorDB, cosineSimilarity } from './vectorDb';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -26,11 +26,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (b.loyaltyScore !== a.loyaltyScore) {
           return b.loyaltyScore - a.loyaltyScore;
         }
-        // Tie-breaker 1: Total Frequency
         if (b.frequency !== a.frequency) {
           return b.frequency - a.frequency;
         }
-        // Tie-breaker 2: Alphabetical
         return a.name.localeCompare(b.name);
       });
 
@@ -125,12 +123,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const suggestions = await Storage.getSuggestions();
     const creators = await Storage.getCreators();
     
-    // 1. Calculate User Vibe Centroid
     const allEmbeddings = await VectorDB.getAllEmbeddings();
-    const topCreatorIds = new Set(Object.values(creators)
+    const topCreators = Object.values(creators)
       .sort((a, b) => b.loyaltyScore - a.loyaltyScore)
-      .slice(0, 10)
-      .map(c => c.id));
+      .slice(0, 10);
+    const topCreatorIds = new Set(topCreators.map(c => c.id));
     
     const userEmbeddings = allEmbeddings.filter(e => topCreatorIds.has(e.id));
     let centroid: number[] | null = null;
@@ -150,22 +147,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const newSuggestions = suggestions.filter(s => s.status === 'new');
     
-    // 2. Rank suggestions
     const rankedSuggestions = [];
     for (const s of newSuggestions) {
       let score = 0;
+      let matchedCreator: Creator | null = null;
+      let matchKeywords: string[] = [];
+
       if (centroid) {
-        // Request embedding for suggestion reason/name
         const response = await chrome.runtime.sendMessage({
           target: 'offscreen',
           action: 'generateEmbedding',
           text: `${s.channelId} ${s.reason}`
         });
+
         if (response && response.success) {
-          score = cosineSimilarity(centroid, response.embedding);
+          const suggestionEmbedding = response.embedding;
+          score = cosineSimilarity(centroid, suggestionEmbedding);
+
+          let maxSim = -1;
+          for (const ue of userEmbeddings) {
+            const sim = cosineSimilarity(ue.embedding, suggestionEmbedding);
+            if (sim > maxSim) {
+              maxSim = sim;
+              matchedCreator = creators[ue.id] || null;
+            }
+          }
+
+          if (matchedCreator && matchedCreator.keywords) {
+            const topKeywords = Object.keys(matchedCreator.keywords).slice(0, 5);
+            const reasonLower = s.reason.toLowerCase();
+            matchKeywords = topKeywords.filter(k => reasonLower.includes(k));
+          }
         }
       } else {
-        // Fallback to keyword matching if no embeddings yet
         const keywordMap: Record<string, number> = {};
         Object.values(creators).forEach(c => {
           if (c.keywords) {
@@ -176,10 +190,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         const reasonWords = s.reason.toLowerCase().split(/\s+/);
         reasonWords.forEach(word => {
-          if (keywordMap[word]) score += keywordMap[word] / 100; // Normalized
+          if (keywordMap[word]) score += keywordMap[word] / 100;
         });
       }
-      rankedSuggestions.push({ ...s, matchScore: score });
+
+      let aiReason = s.reason;
+      if (matchedCreator && score > 0.4) {
+        aiReason = `Semantically similar to <strong>${matchedCreator.name}</strong>`;
+        if (matchKeywords.length > 0) {
+          aiReason += ` (vibe: <em>${matchKeywords.join(', ')}</em>)`;
+        }
+      }
+
+      rankedSuggestions.push({ ...s, matchScore: score, aiReason });
     }
 
     const displaySuggestions = rankedSuggestions
@@ -187,14 +210,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       .slice(0, 5);
 
     if (suggestionsList) {
-      if (newSuggestions.length === 0) {
+      if (displaySuggestions.length === 0) {
         suggestionsList.innerHTML = '<p>No new suggestions. Try "Discover New".</p>';
       } else {
-        suggestionsList.innerHTML = newSuggestions.map(s => `
+        suggestionsList.innerHTML = displaySuggestions.map(s => `
           <div class="creator-item suggestion-item" data-id="${s.channelId}">
             <div class="info">
               <a href="https://www.youtube.com${s.channelId}" target="_blank" class="name">${s.channelId.replace('/@', '').replace('/', '')}</a>
-              <span class="reason">${s.reason}</span>
+              <span class="reason ai-insight">${s.aiReason}</span>
             </div>
             <div class="suggestion-actions">
               <button class="small-btn follow-btn" title="Follow">✓</button>
@@ -203,7 +226,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>
         `).join('');
 
-        // Add event listeners to buttons
         suggestionsList.querySelectorAll('.follow-btn').forEach(btn => {
           btn.addEventListener('click', async (e) => {
             const id = (e.target as HTMLElement).closest('.suggestion-item')?.getAttribute('data-id');
@@ -261,7 +283,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderRecentHits();
   renderLatestVideos();
 
-  // Update AI Status
   const allEmbeddings = await VectorDB.getAllEmbeddings();
   if (aiStatusElement) {
     if (allEmbeddings.length > 0) {
