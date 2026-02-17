@@ -22,6 +22,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   const discoverBtn = document.getElementById('discover-btn');
   const nukeBtn = document.getElementById('nuke-btn');
 
+  function escapeHtml(unsafe: string): string {
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   async function renderCreators() {
     const creators = await Storage.getCreators();
     const creatorCount = Object.keys(creators).length;
@@ -246,11 +255,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         suggestionsList.innerHTML = '<p>No new suggestions. Try "Discover New".</p>';
       } else {
         suggestionsList.innerHTML = displaySuggestions.map(s => `
-          <div class="creator-item suggestion-item" data-id="${s.channelId}">
+          <div class="creator-item suggestion-item" data-id="${escapeHtml(s.channelId)}">
             <div class="info">
-              <a href="https://www.youtube.com${s.channelId}" target="_blank" class="name">
-                ${s.channelId.replace('/@', '').replace('/', '')}
-                ${s.aiSource !== 'System' ? `<span class="engine-badge">${s.aiSource}</span>` : ''}
+              <a href="https://www.youtube.com${escapeHtml(s.channelId)}" target="_blank" class="name">
+                ${escapeHtml(s.channelId.replace('/@', '').replace('/', ''))}
+                ${s.aiSource !== 'System' ? `<span class="engine-badge">${escapeHtml(s.aiSource)}</span>` : ''}
                 ${s.isBridge ? `<span class="bridge-badge" title="Connects multiple of your interests!">Bridge</span>` : ''}
               </a>
               <span class="reason ai-insight">${s.aiReason}</span>

@@ -4,11 +4,17 @@ export const VectorDB = {
     DB_NAME: 'CuratorVectorDB',
     STORE_NAME: 'embeddings',
     VERSION: 1,
+    _dbPromise: null as Promise<IDBDatabase> | null,
 
     async getDB(): Promise<IDBDatabase> {
-        return new Promise((resolve, reject) => {
+        if (this._dbPromise) return this._dbPromise;
+
+        this._dbPromise = new Promise((resolve, reject) => {
             const request = indexedDB.open(this.DB_NAME, this.VERSION);
-            request.onerror = () => reject(request.error);
+            request.onerror = () => {
+                this._dbPromise = null;
+                reject(request.error);
+            };
             request.onsuccess = () => resolve(request.result);
             request.onupgradeneeded = (event: any) => {
                 const db = event.target.result;
@@ -17,6 +23,7 @@ export const VectorDB = {
                 }
             };
         });
+        return this._dbPromise;
     },
 
     async saveEmbedding(id: string, embedding: number[]): Promise<void> {

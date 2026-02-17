@@ -11,8 +11,10 @@ export const Algorithm = {
     // Binge-Watcher Session Cap
     const dayMap: Record<number, number> = {};
     creatorHistory.forEach(h => {
-      const day = Math.floor(h.timestamp / (1000 * 60 * 60 * 24));
-      dayMap[day] = (dayMap[day] || 0) + 1;
+      const date = new Date(h.timestamp);
+      // Create a local date key (YYYYMMDD) to keep sessions consistent with user's day
+      const dayKey = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+      dayMap[dayKey] = (dayMap[dayKey] || 0) + 1;
     });
 
     let effectiveFrequency = 0;

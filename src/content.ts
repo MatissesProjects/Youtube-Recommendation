@@ -116,12 +116,10 @@ async function logWatch(video: HTMLVideoElement) {
     
     // Update creator's keyword profile
     const existingKeywords = existing?.keywords || {};
-    console.log('The Curator: Existing keywords for creator:', JSON.stringify(existingKeywords));
     
     keywords.forEach(k => {
       existingKeywords[k] = (existingKeywords[k] || 0) + 1;
     });
-    console.log('The Curator: New keyword map:', JSON.stringify(existingKeywords));
 
     const creator: Creator = {
       id: currentChannelId,
@@ -133,7 +131,6 @@ async function logWatch(video: HTMLVideoElement) {
     };
     
     creators[currentChannelId] = creator;
-    console.log('The Curator: Saving updated creators list to storage...');
     await chrome.storage.local.set({ creators });
 
     hasLoggedCurrentVideo = true;

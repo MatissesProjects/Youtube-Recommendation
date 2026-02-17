@@ -7,7 +7,8 @@ export const Storage = {
   },
 
   async saveCreator(creator: Creator): Promise<void> {
-    const creators = await this.getCreators();
+    const data = await chrome.storage.local.get('creators');
+    const creators = (data.creators as Record<string, Creator>) || {};
     creators[creator.id] = creator;
     await chrome.storage.local.set({ creators });
   },
@@ -18,13 +19,15 @@ export const Storage = {
   },
 
   async addHistoryEntry(entry: HistoryEntry): Promise<void> {
-    const history = await this.getHistory();
+    const data = await chrome.storage.local.get('history');
+    const history = (data.history as HistoryEntry[]) || [];
     history.push(entry);
     await chrome.storage.local.set({ history });
   },
 
   async bulkAddHistory(entries: HistoryEntry[]): Promise<void> {
-    const history = await this.getHistory();
+    const data = await chrome.storage.local.get('history');
+    const history = (data.history as HistoryEntry[]) || [];
     const existingIds = new Set(history.map(h => h.videoId + h.timestamp));
     const uniqueNew = entries.filter(e => !existingIds.has(e.videoId + e.timestamp));
     await chrome.storage.local.set({ history: [...history, ...uniqueNew] });
