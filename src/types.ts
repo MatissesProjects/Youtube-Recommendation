@@ -10,6 +10,7 @@ export interface Creator {
   loyaltyScore: number;
   frequency: number;
   keywords?: Record<string, number>;
+  endorsements?: string[]; // IDs of channels this creator featured
 }
 
 export interface Annotation {

@@ -4,6 +4,7 @@ import { Creator, HistoryEntry } from './types';
 import { VectorDB, cosineSimilarity } from './vectorDb';
 import { AIService } from './aiService';
 import { CONFIG } from './constants';
+import { normalizeYoutubeUrl } from './utils';
 
 async function initGalaxy() {
     const creatorsMap = await Storage.getCreators();
@@ -39,6 +40,7 @@ async function initGalaxy() {
 
     const links: any[] = [];
 
+    // 1. Keyword & Semantic Links
     for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
             const shared = nodes[i].keywords.filter((k: string) => nodes[j].keywords.includes(k));
@@ -49,14 +51,60 @@ async function initGalaxy() {
                 semanticSim = cosineSimilarity(embA, embB);
             }
 
-            // Lower thresholds for more links/better clustering
-            if (shared.length >= 1 || semanticSim > 0.75) {
+            // Relaxed thresholds for more links
+            if (shared.length >= 1 || semanticSim > 0.70) {
                 links.push({
                     source: nodes[i].id,
                     target: nodes[j].id,
-                    value: (shared.length * 3) + (semanticSim * 15),
-                    type: semanticSim > 0.85 ? 'semantic' : 'keyword'
+                    value: (shared.length * 4) + (semanticSim * 20),
+                    type: semanticSim > 0.80 ? 'semantic' : 'keyword'
                 });
+            }
+        }
+    }
+
+    // 2. Social Links (Endorsements)
+    creators.forEach(c => {
+        if (c.endorsements) {
+            c.endorsements.forEach(targetId => {
+                if (creatorsMap[targetId]) {
+                    links.push({
+                        source: c.id,
+                        target: targetId,
+                        value: 20, // Strong connection
+                        type: 'social'
+                    });
+                }
+            });
+        }
+    });
+
+    // 3. Temporal Links (Watched together in same session)
+    const sortedHistory = [...history].sort((a, b) => a.timestamp - b.timestamp);
+    for (let i = 0; i < sortedHistory.length - 1; i++) {
+        const a = sortedHistory[i];
+        const b = sortedHistory[i+1];
+        const timeDiff = Math.abs(a.timestamp - b.timestamp);
+        
+        // If watched within 30 minutes and different creators
+        if (timeDiff < 30 * 60 * 1000 && a.channelId !== b.channelId) {
+            if (creatorsMap[a.channelId] && creatorsMap[b.channelId]) {
+                const existing = links.find(l => 
+                    (l.source === a.channelId && l.target === b.channelId) ||
+                    (l.source === b.channelId && l.target === a.channelId)
+                );
+                
+                if (existing) {
+                    existing.value += 5;
+                    if (existing.type === 'keyword') existing.type = 'temporal'; // Upgrade
+                } else {
+                    links.push({
+                        source: a.channelId,
+                        target: b.channelId,
+                        value: 5,
+                        type: 'temporal'
+                    });
+                }
             }
         }
     }
@@ -99,9 +147,15 @@ async function initGalaxy() {
             }
         })
         .linkWidth(link => Math.sqrt((link as any).value))
-        .linkColor(link => (link as any).type === 'semantic' ? 'rgba(66, 133, 244, 0.4)' : 'rgba(255, 255, 255, 0.15)')
+        .linkColor(link => {
+            const type = (link as any).type;
+            if (type === 'semantic') return 'rgba(66, 133, 244, 0.4)'; // Blue
+            if (type === 'social') return 'rgba(244, 180, 0, 0.5)';   // Gold/Yellow
+            if (type === 'temporal') return 'rgba(15, 157, 88, 0.4)'; // Green
+            return 'rgba(255, 255, 255, 0.15)'; // Keyword (White)
+        })
         .onNodeClick((node: any) => {
-            if (node && node.id) window.open(`https://www.youtube.com${node.id}`, '_blank');
+            if (node && node.id) window.open(normalizeYoutubeUrl(node.id), '_blank');
         })
         .onNodeHover(node => {
             graphContainer.style.cursor = node ? 'pointer' : 'default';

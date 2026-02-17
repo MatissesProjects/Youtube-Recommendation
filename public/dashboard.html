@@ -13,7 +13,27 @@
 <body>
     <div id="header">
         <h1>Your Interest Galaxy</h1>
-        <p class="legend">Nodes are creators. Links represent shared topics.</p>
+        <p class="legend" style="margin-bottom: 10px;">Nodes are creators. Links represent shared topics or social ties.</p>
+        
+        <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 4px; font-size: 0.75em; pointer-events: auto;">
+            <div style="margin-bottom: 5px; color: #aaa; text-transform: uppercase; font-size: 0.8em; letter-spacing: 1px; font-weight: bold;">Connection Types</div>
+            <div style="display:flex; align-items:center; margin-bottom:4px;">
+                <div style="width:10px; height:2px; background:#4285f4; margin-right:8px;"></div>
+                <span>Semantic (AI Vibe)</span>
+            </div>
+            <div style="display:flex; align-items:center; margin-bottom:4px;">
+                <div style="width:10px; height:2px; background:#f4b400; margin-right:8px;"></div>
+                <span>Social (Featured)</span>
+            </div>
+            <div style="display:flex; align-items:center; margin-bottom:4px;">
+                <div style="width:10px; height:2px; background:#0f9d58; margin-right:8px;"></div>
+                <span>Temporal (Session)</span>
+            </div>
+            <div style="display:flex; align-items:center;">
+                <div style="width:10px; height:2px; background:#ffffff; opacity: 0.5; margin-right:8px;"></div>
+                <span>Keywords (Tags)</span>
+            </div>
+        </div>
     </div>
     <div id="graph-container"></div>
         <div id="controls">

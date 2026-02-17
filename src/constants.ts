@@ -9,7 +9,7 @@ export const CONFIG = {
   TOP_CREATORS_COUNT: 10,
   RSS_POLL_INTERVAL_MINS: 24 * 60,
   SCORE_UPDATE_INTERVAL_MINS: 4 * 60,
-  EMBEDDING_SYNC_COUNT: 20,
+  EMBEDDING_SYNC_COUNT: 100, // Sync more creators for better semantic clustering
   RABBIT_HOLE: {
     BOOST_FACTOR: 10,
     DURATION_MINUTES: 30
@@ -17,7 +17,8 @@ export const CONFIG = {
   STOP_WORDS: [
     'google', 'youtube', 'http', 'https', 'www', 'video', 'channel', 
     'subscribe', 'social', 'media', 'twitter', 'instagram', 'facebook',
-    'the', 'a', 'an', 'in', 'on', 'of', 'for', 'to', 'and'
+    'the', 'a', 'an', 'in', 'on', 'of', 'for', 'to', 'and', 'with', 'from',
+    'this', 'that', 'your', 'is', 'are', 'was', 'were', 'be', 'been', 'being'
   ]
 };
 

@@ -10,7 +10,7 @@ export function extractKeywords(text: string, stopWords: string[]): string[] {
     const words = text.toLowerCase()
       .replace(/[^\w\s]/g, ' ')
       .split(/\s+/)
-      .filter(w => w.length > 4 && !stopWordsSet.has(w));
+      .filter(w => w.length >= 4 && !stopWordsSet.has(w));
     
     const wordFreq: Record<string, number> = {};
     words.forEach(w => {
@@ -21,4 +21,10 @@ export function extractKeywords(text: string, stopWords: string[]): string[] {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 15)
       .map(([word]) => word);
+}
+
+export function normalizeYoutubeUrl(path: string): string {
+    if (path.startsWith('http')) return path;
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `https://www.youtube.com${cleanPath}`;
 }
