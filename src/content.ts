@@ -1,6 +1,7 @@
 import { Storage, HistoryEntry, Creator, Suggestion } from './storage';
 import { CONFIG, SELECTORS } from './constants';
 import { SponsorSegment } from './types';
+import { GenerativeService } from './generativeService';
 
 console.log('The Curator: Watcher script active.');
 
@@ -9,6 +10,89 @@ let currentChannelId: string | null = null;
 let currentChannelName: string | null = null;
 let hasLoggedCurrentVideo = false;
 let currentSegments: SponsorSegment[] = [];
+
+async function applyFocusMode() {
+  const settings = await Storage.getSettings();
+  const id = 'curator-focus-mode-styles';
+  let style = document.getElementById(id);
+
+  if (settings.focusMode) {
+    if (!style) {
+      style = document.createElement('style');
+      style.id = id;
+      // Hide homepage feed, sidebar, and end screen suggestions
+      style.textContent = `
+        ytd-rich-grid-renderer, 
+        #related, 
+        .ytp-endscreen-content, 
+        ytd-browse[page-subtype="home"] #contents,
+        ytd-watch-next-secondary-results-renderer { 
+          display: none !important; 
+        }
+        #primary { max-width: 100% !important; }
+      `;
+      document.head.appendChild(style);
+    }
+  } else if (style) {
+    style.remove();
+  }
+}
+
+async function applyDeHype() {
+  const settings = await Storage.getSettings();
+  if (!settings.deHype) return;
+
+  const titleElement = document.querySelector('h1.ytd-video-primary-info-renderer, ytd-watch-metadata #title h1');
+  if (!titleElement) return;
+
+  const originalTitle = (titleElement.textContent || '').trim();
+  
+  // Detection for "Hype": 
+  // 1. More than 3 emojis
+  // 2. Mostly ALL CAPS (more than 50% uppercase and > 10 chars)
+  const emojiCount = (originalTitle.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\u200D/g) || []).length;
+  const upperCaseCount = (originalTitle.match(/[A-Z]/g) || []).length;
+  const isAllCaps = upperCaseCount > (originalTitle.length * 0.5) && originalTitle.length > 10;
+
+  if (emojiCount > 2 || isAllCaps) {
+    if (titleElement.getAttribute('data-dehype-done')) return;
+    
+    console.log('The Curator: De-Hyping title...');
+    
+    // Try to get a clean title
+    const prompt = `Rewrite this YouTube title to be objective and calm, removing clickbait, all-caps, and excessive emojis: "${originalTitle}"`;
+    
+    let cleanTitle = originalTitle;
+    try {
+      // @ts-ignore
+      if (typeof window.ai !== 'undefined' && window.ai.createTextSession) {
+        // @ts-ignore
+        const session = await window.ai.createTextSession();
+        cleanTitle = await session.prompt(prompt);
+      }
+    } catch (e) {
+      // Fallback: Just lowercase and remove extra symbols
+      cleanTitle = originalTitle.toLowerCase()
+        .replace(/[^\w\s]/gi, '')
+        .replace(/\b([a-z])([a-z]+)/g, (m, g1, g2) => g1.toUpperCase() + g2);
+    }
+
+    if (cleanTitle !== originalTitle) {
+      const container = titleElement.parentElement;
+      if (container && !document.getElementById('curator-original-title')) {
+        const originalDisplay = document.createElement('div');
+        originalDisplay.id = 'curator-original-title';
+        originalDisplay.style.cssText = 'font-size: 0.7em; color: #666; font-style: italic; margin-bottom: 4px;';
+        originalDisplay.textContent = `Original: ${originalTitle}`;
+        container.insertBefore(originalDisplay, titleElement);
+        
+        (titleElement as HTMLElement).innerText = cleanTitle;
+        titleElement.setAttribute('data-dehype-done', 'true');
+        (titleElement as HTMLElement).style.color = '#1a73e8';
+      }
+    }
+  }
+}
 
 async function fetchSponsorSegments(videoId: string) {
   try {
@@ -137,7 +221,8 @@ async function logWatch(video: HTMLVideoElement) {
     const existing = creators[currentChannelId];
     
     const existingKeywords = existing?.keywords || {};
-    keywords.forEach(k => {
+    // Store both meta/title keywords AND top description keywords for better clustering
+    combinedKeywords.forEach(k => {
       existingKeywords[k] = (existingKeywords[k] || 0) + 1;
     });
 
@@ -251,6 +336,8 @@ function initWatcher() {
   const videoId = getVideoId();
   if (!video || !videoId) return;
   injectNoteUI();
+  applyFocusMode();
+  applyDeHype();
   if (videoId !== currentVideoId) {
     currentVideoId = videoId;
     hasLoggedCurrentVideo = false;
@@ -285,3 +372,10 @@ const navObserver = new MutationObserver(() => {
 });
 navObserver.observe(document, { subtree: true, childList: true });
 setTimeout(initWatcher, 3000);
+
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.settings) {
+    applyFocusMode();
+    applyDeHype();
+  }
+});
