@@ -53,6 +53,7 @@ async function scrapeHistory() {
   const creators = await Storage.getCreators();
   const suggestions = await Storage.getSuggestions();
   const historyEntries: any[] = [];
+  const newCreatorIds: string[] = [];
   let newCount = 0;
   let skippedCount = 0;
   let errorCount = 0;
@@ -100,6 +101,7 @@ async function scrapeHistory() {
           keywords: {}
         };
         newCount++;
+        newCreatorIds.push(channelId);
         
         // Remove from suggestions if it was there
         const suggIndex = suggestions.findIndex(s => s.channelId === channelId);
@@ -138,6 +140,11 @@ async function scrapeHistory() {
   await chrome.storage.local.set({ creators });
   await Storage.saveSuggestions(suggestions);
   await Storage.bulkAddHistory(historyEntries);
+
+  if (newCreatorIds.length > 0) {
+    chrome.runtime.sendMessage({ action: 'startResearch', ids: newCreatorIds.slice(0, 15) });
+  }
+
   alert(`Import Finished!\n- Videos Processed: ${items.length}\n- New Creators: ${newCount}\n- History Entries Seeded: ${historyEntries.length}`);
 }
 

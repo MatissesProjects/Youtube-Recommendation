@@ -6,10 +6,19 @@ async function scrapeGoogle() {
     const urlParams = new URLSearchParams(window.location.search);
     const query = urlParams.get('q') || '';
     
-    // Check if this is a Curator research query
-    if (!query.includes('youtube channel niche topics summary')) return;
+    // Support both old and new query formats
+    const isCuratorQuery = query.includes('youtube channel niche topics summary') || 
+                           query.includes('general channel information');
+    
+    if (!isCuratorQuery) return;
 
-    const creatorName = query.split(' youtube channel')[0];
+    let creatorName = '';
+    if (query.startsWith('youtube channel ')) {
+        creatorName = query.replace('youtube channel ', '').split(' general channel information')[0];
+    } else {
+        creatorName = query.split(' youtube channel')[0];
+    }
+
     if (!creatorName) return;
 
     console.log(`The Curator: Researching "${creatorName}"...`);

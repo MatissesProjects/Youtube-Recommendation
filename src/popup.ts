@@ -402,6 +402,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (statusElement) statusElement.textContent = 'Researching creators...';
   });
 
+  // Helper for one-time bulk research
+  aiStatusElement?.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (confirm('Research ALL creators in background? (Opens many tabs)')) {
+      chrome.runtime.sendMessage({ action: 'researchAll' });
+    }
+  });
+
   discoverBtn?.addEventListener('click', () => {
     chrome.runtime.sendMessage({ action: 'discover' });
     if (statusElement) statusElement.textContent = 'Discovering new creators...';

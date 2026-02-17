@@ -118,11 +118,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
   else if (message.action === 'discover') startDiscovery();
-  else if (message.action === 'startResearch') startResearch();
+  else if (message.action === 'startResearch') startResearch(message.ids);
+  else if (message.action === 'researchAll') researchAll();
   else if (message.action === 'processResearch') {
     processResearch(message.creatorName, message.data);
   }
 });
+
+async function researchAll() {
+  const creators = await Storage.getCreators();
+  const ids = Object.keys(creators);
+  console.log(`Background: Starting bulk research for ${ids.length} creators.`);
+  await startResearch(ids);
+}
 
 async function processResearch(name: string, data: string) {
   const creators = await Storage.getCreators();
@@ -134,20 +142,28 @@ async function processResearch(name: string, data: string) {
   }
 }
 
-async function startResearch() {
+async function startResearch(targetIds?: string[]) {
   const creators = await Storage.getCreators();
-  const topCreators = Object.values(creators)
-    .sort((a, b) => b.loyaltyScore - a.loyaltyScore)
-    .filter(c => !c.enrichedDescription)
-    .slice(0, 5);
+  let list = [];
+  
+  if (targetIds && targetIds.length > 0) {
+    list = targetIds.map(id => creators[id]).filter(Boolean);
+  } else {
+    list = Object.values(creators)
+      .sort((a, b) => b.loyaltyScore - a.loyaltyScore)
+      .filter(c => !c.enrichedDescription)
+      .slice(0, 5);
+  }
 
-  for (const creator of topCreators) {
-    // Open a background tab for research - the user can then "Feed" this back or 
-    // we can eventually add a scraper for these results.
+  for (const creator of list) {
+    // Precise query as requested
+    const query = `youtube channel ${creator.name} general channel information`;
     chrome.tabs.create({ 
-      url: `https://www.google.com/search?q=${encodeURIComponent(creator.name + ' youtube channel niche topics summary')}`, 
+      url: `https://www.google.com/search?q=${encodeURIComponent(query)}`, 
       active: false 
     });
+    // Add a small delay between opening tabs to avoid being flagged
+    await new Promise(resolve => setTimeout(resolve, 1500));
   }
 }
 
