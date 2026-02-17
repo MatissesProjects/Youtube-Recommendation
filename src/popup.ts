@@ -132,64 +132,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   async function renderRecentHits() {
-    // ... existing implementation
-  }
-
-  // ... renderLatestVideos ...
-
-  // ... renderVibeExplorer ...
-
-  // ... listeners ...
-
-  async function renderSuggestions() {
-    // ... brain icon logic ...
-    const suggestions = await Storage.getSuggestions();
-    const creators = await Storage.getCreators();
-    const rabbitHole = await Storage.getRabbitHole();
-    
-    // ... centroid calculation ...
-
-    // ... newSuggestions filtering ...
-    
-    const rankedSuggestions = [];
-    for (const s of newSuggestions) {
-      let score = 0;
-      // ... embedding/keyword logic ...
-
-      if (centroid) {
-         // ... embedding calculation ...
-      } else {
-        const keywordMap: Record<string, number> = {};
-        Object.values(creators).forEach(c => {
-          if (c.keywords) {
-            Object.entries(c.keywords).forEach(([word, count]) => {
-              keywordMap[word] = (keywordMap[word] || 0) + count;
-            });
-          }
-        });
-        const reasonWords = s.reason.toLowerCase().split(/\s+/);
-        reasonWords.forEach(word => {
-          let weight = keywordMap[word] ? keywordMap[word] / 100 : 0;
-          // RABBIT HOLE BOOST
-          if (rabbitHole && word.includes(rabbitHole.topic.toLowerCase())) {
-            weight += CONFIG.RABBIT_HOLE.BOOST_FACTOR; // Massive boost
-          }
-          score += weight;
-        });
-      }
-
-      // Semantic boost for Rabbit Hole if using embeddings
-      if (centroid && rabbitHole && s.reason.toLowerCase().includes(rabbitHole.topic.toLowerCase())) {
-         score += 0.5; // Artificial boost to semantic score
-      }
-
-      // ... bridge logic ...
-      // ... AI reason generation ...
-
-      rankedSuggestions.push({ ...s, matchScore: score, aiReason, aiSource: source, isBridge });
-    }
-    // ... sort and render ...
-  }
     const history = await Storage.getHistory();
     const recent = history.filter(h => h.title).reverse().slice(0, 3);
 
@@ -207,7 +149,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   async function renderLatestVideos() {
-    // ... existing implementation
+    const creators = await Storage.getCreators();
+    const topLoyal = Object.values(creators)
+      .filter(c => c.loyaltyScore > 70 && c.latestVideo)
+      .sort((a, b) => (b.latestVideo?.published || 0) - (a.latestVideo?.published || 0))
+      .slice(0, 3);
+
+    if (favoriteVideosList) {
+      if (topLoyal.length === 0) {
+        favoriteVideosList.innerHTML = '<p class="small-text">No new videos from your high-loyalty creators.</p>';
+      } else {
+        favoriteVideosList.innerHTML = topLoyal.map(c => `
+          <div class="video-alert">
+            <span class="creator-badge">${c.name}</span>
+            <a href="https://www.youtube.com/watch?v=${c.latestVideo?.id}" target="_blank" class="video-link">
+              ${c.latestVideo?.title}
+            </a>
+          </div>
+        `).join('');
+      }
+    }
   }
 
   async function renderVibeExplorer() {
@@ -241,9 +202,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function renderSuggestions() {
     if (brainIcon) brainIcon.style.display = 'inline';
-    // ... existing suggestion logic
     const suggestions = await Storage.getSuggestions();
     const creators = await Storage.getCreators();
+    const rabbitHole = await Storage.getRabbitHole();
     
     // Calculate global top topics for Bridge detection
     const globalKeywordMap: Record<string, number> = {};
@@ -301,6 +262,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           const suggestionEmbedding = response.embedding;
           score = cosineSimilarity(centroid, suggestionEmbedding);
 
+          // Boost if in Rabbit Hole
+          if (rabbitHole && s.reason.toLowerCase().includes(rabbitHole.topic.toLowerCase())) {
+            score += 0.5;
+          }
+
           let maxSim = -1;
           for (const ue of userEmbeddings) {
             const sim = cosineSimilarity(ue.embedding, suggestionEmbedding);
@@ -319,7 +285,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else {
         const reasonWords = s.reason.toLowerCase().split(/\s+/);
         reasonWords.forEach(word => {
-          if (globalKeywordMap[word]) score += globalKeywordMap[word] / 100;
+          let weight = globalKeywordMap[word] ? globalKeywordMap[word] / 100 : 0;
+          if (rabbitHole && word.includes(rabbitHole.topic.toLowerCase())) {
+            weight += CONFIG.RABBIT_HOLE.BOOST_FACTOR;
+          }
+          score += weight;
         });
       }
 
@@ -426,6 +396,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderTopTopics();
   renderRecentHits();
   renderLatestVideos();
+  renderRabbitHoleStatus();
 
   const allEmbeddings = await VectorDB.getAllEmbeddings();
   if (aiStatusElement) {
