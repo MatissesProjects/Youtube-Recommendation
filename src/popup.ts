@@ -7,6 +7,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('Popup loaded.');
   const statusElement = document.getElementById('status');
   const aiStatusElement = document.getElementById('ai-status');
+  const brainIcon = document.getElementById('brain-icon');
+  const vibeExplorer = document.getElementById('vibe-explorer');
+  const vibeList = document.getElementById('vibe-list');
+  const closeVibeBtn = document.getElementById('close-vibe');
   const creatorsList = document.getElementById('creators-list');
   const suggestionsList = document.getElementById('suggestions-list');
   const topicsList = document.getElementById('topics-list');
@@ -99,29 +103,41 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   async function renderLatestVideos() {
-    const creators = await Storage.getCreators();
-    const topLoyal = Object.values(creators)
-      .filter(c => c.loyaltyScore > 70 && c.latestVideo)
-      .sort((a, b) => (b.latestVideo?.published || 0) - (a.latestVideo?.published || 0))
-      .slice(0, 3);
+    // ... existing implementation
+  }
 
-    if (favoriteVideosList) {
-      if (topLoyal.length === 0) {
-        favoriteVideosList.innerHTML = '<p class="small-text">No new videos from your high-loyalty creators.</p>';
+  async function renderVibeExplorer() {
+    const allEmbeddings = await VectorDB.getAllEmbeddings();
+    const creators = await Storage.getCreators();
+    
+    if (vibeList) {
+      if (allEmbeddings.length === 0) {
+        vibeList.innerHTML = '<p>No vibes indexed yet. Watch and refresh!</p>';
       } else {
-        favoriteVideosList.innerHTML = topLoyal.map(c => `
-          <div class="video-alert">
-            <span class="creator-badge">${c.name}</span>
-            <a href="https://www.youtube.com/watch?v=${c.latestVideo?.id}" target="_blank" class="video-link">
-              ${c.latestVideo?.title}
-            </a>
-          </div>
-        `).join('');
+        vibeList.innerHTML = allEmbeddings.map(e => {
+          const c = creators[e.id];
+          if (!c) return '';
+          const topVibes = Object.keys(c.keywords || {}).slice(0, 3).join(', ');
+          return `<div style="margin-bottom:4px;"><strong>${c.name}</strong>: <span style="color:#666;">${topVibes || 'General Content'}</span></div>`;
+        }).join('');
       }
     }
   }
 
+  aiStatusElement?.addEventListener('click', async () => {
+    if (vibeExplorer) {
+      vibeExplorer.style.display = 'block';
+      await renderVibeExplorer();
+    }
+  });
+
+  closeVibeBtn?.addEventListener('click', () => {
+    if (vibeExplorer) vibeExplorer.style.display = 'none';
+  });
+
   async function renderSuggestions() {
+    if (brainIcon) brainIcon.style.display = 'inline';
+    // ... existing suggestion logic
     const suggestions = await Storage.getSuggestions();
     const creators = await Storage.getCreators();
     
@@ -268,6 +284,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
       }
     }
+    if (brainIcon) brainIcon.style.display = 'none';
   }
 
   importBtn?.addEventListener('click', () => {

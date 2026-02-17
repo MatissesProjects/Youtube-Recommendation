@@ -169,11 +169,18 @@
   </style>
 </head>
 <body>
-    <h1>The Curator</h1>
-    <div id="status">Initializing...</div>
-    <div id="ai-status" style="font-size: 0.7em; color: #888; margin-top: -10px; margin-bottom: 10px;">Semantic Engine: Standby</div>
+      <h1>The Curator <span id="brain-icon" style="display: none; font-size: 0.8em;">🧠</span></h1>
+      <div id="status">Initializing...</div>
+      <div id="ai-status" style="font-size: 0.7em; color: #888; margin-top: -10px; margin-bottom: 10px; cursor: pointer;" title="Click to see what I've learned">Semantic Engine: Standby</div>
+      
+      <div id="vibe-explorer" style="display: none; background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 10px; border: 1px solid #1a73e8; font-size: 0.85em;">
+        <h4 style="margin: 0 0 5px 0; color: #1a73e8;">The AI's Internal Map</h4>
+        <div id="vibe-list"></div>
+        <button id="close-vibe" style="margin-top: 5px; background: #f1f3f4; color: #333; font-size: 0.8em; padding: 2px 5px; flex: none;">Close Explorer</button>
+      </div>
     
-    <div id="interests"
+      <div id="interests"
+    
    style="background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
     <h3 style="margin-top: 0; font-size: 1em;">Top Topics</h3>
     <div id="topics-list"></div>
