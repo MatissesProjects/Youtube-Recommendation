@@ -14,14 +14,28 @@ async function initGalaxy() {
     
     const embeddingMap = new Map(allEmbeddings.map(e => [e.id, e.embedding]));
 
-    const nodes: any[] = creators.map(c => ({
-        id: c.id,
-        name: c.name,
-        val: Math.max(4, (c.loyaltyScore / 8)), 
-        color: `hsl(${Math.random() * 360}, 70%, 60%)`,
-        keywords: Object.keys(c.keywords || {}).filter(k => !stopWordsSet.has(k)),
-        isSearchMatch: false
-    }));
+    const nodes: any[] = creators.map(c => {
+        const creatorKeywords = Object.entries(c.keywords || {})
+            .filter(([k]) => !stopWordsSet.has(k))
+            .sort((a, b) => b[1] - a[1]);
+        const primaryKeyword = creatorKeywords[0]?.[0] || 'unknown';
+        
+        // Simple hash function for consistent colors based on primary keyword
+        let hash = 0;
+        for (let i = 0; i < primaryKeyword.length; i++) {
+            hash = primaryKeyword.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const hue = Math.abs(hash % 360);
+
+        return {
+            id: c.id,
+            name: c.name,
+            val: Math.max(4, (c.loyaltyScore / 8)), 
+            color: `hsl(${hue}, 70%, 60%)`,
+            keywords: creatorKeywords.map(([k]) => k),
+            isSearchMatch: false
+        };
+    });
 
     const links: any[] = [];
 
@@ -35,11 +49,12 @@ async function initGalaxy() {
                 semanticSim = cosineSimilarity(embA, embB);
             }
 
-            if (shared.length >= 2 || semanticSim > 0.85) {
+            // Lower thresholds for more links/better clustering
+            if (shared.length >= 1 || semanticSim > 0.75) {
                 links.push({
                     source: nodes[i].id,
                     target: nodes[j].id,
-                    value: (shared.length * 2) + (semanticSim * 10),
+                    value: (shared.length * 3) + (semanticSim * 15),
                     type: semanticSim > 0.85 ? 'semantic' : 'keyword'
                 });
             }
@@ -84,7 +99,7 @@ async function initGalaxy() {
             }
         })
         .linkWidth(link => Math.sqrt((link as any).value))
-        .linkColor(link => (link as any).type === 'semantic' ? 'rgba(26, 115, 232, 0.2)' : 'rgba(255,255,255,0.05)')
+        .linkColor(link => (link as any).type === 'semantic' ? 'rgba(66, 133, 244, 0.4)' : 'rgba(255, 255, 255, 0.15)')
         .onNodeClick((node: any) => {
             if (node && node.id) window.open(`https://www.youtube.com${node.id}`, '_blank');
         })
@@ -92,9 +107,10 @@ async function initGalaxy() {
             graphContainer.style.cursor = node ? 'pointer' : 'default';
         });
 
-    // Correctly apply D3 forces without callbacks
+    // Improved Force Configuration for "Clumping"
     graph.d3Force('charge')!.strength(-150);
-    graph.d3Force('link')!.distance((d: any) => 100 / Math.sqrt(d.value || 1));
+    graph.d3Force('link')!.distance((d: any) => 60 / Math.log10((d.value || 1) + 1));
+    graph.d3Force('center')!.strength(0.1);
 
     const searchInput = document.getElementById('semantic-search') as HTMLInputElement;
     const resultsContainer = document.getElementById('search-results');
