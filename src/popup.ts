@@ -23,6 +23,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   const galaxyBtn = document.getElementById('galaxy-btn');
   const nukeBtn = document.getElementById('nuke-btn');
   const rabbitHoleStatus = document.getElementById('rabbit-hole-status');
+  const focusModeToggle = document.getElementById('focus-mode-toggle') as HTMLInputElement;
+  const dehypeToggle = document.getElementById('dehype-toggle') as HTMLInputElement;
+
+  async function initSettings() {
+    const settings = await Storage.getSettings();
+    if (focusModeToggle) {
+      focusModeToggle.checked = settings.focusMode;
+      focusModeToggle.addEventListener('change', async () => {
+        const current = await Storage.getSettings();
+        await Storage.saveSettings({ ...current, focusMode: focusModeToggle.checked });
+      });
+    }
+    if (dehypeToggle) {
+      dehypeToggle.checked = settings.deHype;
+      dehypeToggle.addEventListener('change', async () => {
+        const current = await Storage.getSettings();
+        await Storage.saveSettings({ ...current, deHype: dehypeToggle.checked });
+      });
+    }
+  }
 
   function escapeHtml(unsafe: string): string {
     return unsafe
@@ -397,6 +417,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderRecentHits();
   renderLatestVideos();
   renderRabbitHoleStatus();
+  initSettings();
 
   const allEmbeddings = await VectorDB.getAllEmbeddings();
   if (aiStatusElement) {

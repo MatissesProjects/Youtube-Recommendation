@@ -3,8 +3,25 @@ export interface RabbitHoleState {
   expiresAt: number;
 }
 
+export interface AppSettings {
+  focusMode: boolean;
+  deHype: boolean;
+}
+
+const DEFAULT_SETTINGS: AppSettings = {
+  focusMode: false,
+  deHype: false
+};
+
 export const Storage = {
-  // ... existing methods ...
+  async getSettings(): Promise<AppSettings> {
+    const data = await chrome.storage.local.get('settings');
+    return (data.settings as AppSettings) || DEFAULT_SETTINGS;
+  },
+
+  async saveSettings(settings: AppSettings): Promise<void> {
+    await chrome.storage.local.set({ settings });
+  },
 
   async getRabbitHole(): Promise<RabbitHoleState | null> {
     const data = await chrome.storage.local.get('rabbitHole');
