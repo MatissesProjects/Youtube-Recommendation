@@ -1,5 +1,6 @@
 import { Storage, HistoryEntry, Creator, Suggestion } from './storage';
-import { CONFIG } from './constants';
+import { CONFIG, SELECTORS } from './constants';
+import { SponsorSegment } from './types';
 
 console.log('The Curator: Watcher script active.');
 
@@ -7,6 +8,26 @@ let currentVideoId: string | null = null;
 let currentChannelId: string | null = null;
 let currentChannelName: string | null = null;
 let hasLoggedCurrentVideo = false;
+let currentSegments: SponsorSegment[] = [];
+
+async function fetchSponsorSegments(videoId: string) {
+  try {
+    const response = await fetch(`https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}&categories=["sponsor","selfpromo","interaction","intro","outro","preview","filler","music_offtopic"]`);
+    if (response.ok) {
+      const data = await response.json();
+      currentSegments = data.map((s: any) => ({
+        category: s.category,
+        start: s.segment[0],
+        end: s.segment[1]
+      }));
+      console.log(`The Curator: Found ${currentSegments.length} filler segments for this video.`);
+    } else {
+      currentSegments = [];
+    }
+  } catch (e) {
+    currentSegments = [];
+  }
+}
 
 function getVideoId() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -59,14 +80,19 @@ async function logWatch(video: HTMLVideoElement) {
   const currentTime = video.currentTime;
   if (!duration || isNaN(duration)) return;
 
-  const completionRatio = currentTime / duration;
+  // Calculate True Duration (Total - Fluff)
+  const fluffTime = currentSegments.reduce((acc, s) => acc + (s.end - s.start), 0);
+  const trueDuration = Math.max(1, duration - fluffTime);
+  
+  // Note: Skipping fluff segments doesn't penalize you.
+  const completionRatio = currentTime / trueDuration;
   
   if (Math.floor(currentTime) % 30 === 0) {
-    console.log(`The Curator: Progress ${Math.round(completionRatio * 100)}% (${Math.round(currentTime)}/${Math.round(duration)}s)`);
+    console.log(`The Curator: Progress ${Math.round(completionRatio * 100)}% (True Duration: ${Math.round(trueDuration)}s)`);
   }
 
   if (completionRatio > CONFIG.COMPLETION_THRESHOLD || currentTime > CONFIG.MIN_WATCH_TIME_SECONDS) {
-    console.log(`The Curator: Logging watch for ${currentVideoId} by ${currentChannelName}`);
+    console.log(`The Curator: Logging TRUE watch for ${currentVideoId} by ${currentChannelName}`);
     
     const keywords = getVideoKeywords();
     const videoTitle = getVideoTitle();
@@ -99,8 +125,10 @@ async function logWatch(video: HTMLVideoElement) {
       title: videoTitle,
       watchTime: currentTime,
       totalDuration: duration,
+      trueDuration: trueDuration,
       timestamp: Date.now(),
-      tags: combinedKeywords
+      tags: combinedKeywords,
+      segments: currentSegments
     };
 
     await Storage.addHistoryEntry(entry);
@@ -226,6 +254,9 @@ function initWatcher() {
   if (videoId !== currentVideoId) {
     currentVideoId = videoId;
     hasLoggedCurrentVideo = false;
+    currentSegments = [];
+    fetchSponsorSegments(videoId);
+    
     let retries = 0;
     const infoInterval = setInterval(() => {
       const info = getChannelInfo();

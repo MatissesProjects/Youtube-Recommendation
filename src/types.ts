@@ -17,6 +17,12 @@ export interface Annotation {
   note: string;
 }
 
+export interface SponsorSegment {
+  category: string;
+  start: number;
+  end: number;
+}
+
 export interface HistoryEntry {
   videoId: string;
   channelId: string;
@@ -28,6 +34,8 @@ export interface HistoryEntry {
   annotations?: Annotation[];
   summary?: string;
   transcript?: string;
+  segments?: SponsorSegment[];
+  trueDuration?: number; // Total length minus fluff
 }
 
 export interface Suggestion {

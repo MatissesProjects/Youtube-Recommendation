@@ -78,7 +78,15 @@
 
 ---
 
-## 🛡️ Track 10: The "True Signal" Pipeline (Anti-Noise) 🆕
+## 🔍 Track 14: Deep Vector Search ✅
+*Finding knowledge using concepts, not just keywords.*
+* [x] **Knowledge Embedding Pipeline:** ✅ Semantic indexing of History Entries.
+* [x] **Concept Search:** ✅ Search history by "Vibe" in the Dashboard.
+* [x] **Search UI:** ✅ Glow-based visual feedback in the Galaxy Graph.
+
+---
+
+## 🛡️ Track 10: The "True Signal" Pipeline (In Progress) 🔄
 *Cleaning the data ingestion to ensure quality over clickbait.*
 * [ ] **SponsorBlock Integration:** Query API to subtract fluff from "True Watch Time."
 * [ ] **The De-Hype Layer:** Use Local AI to rewrite clickbait titles (ALL CAPS/Emojis).
@@ -88,33 +96,5 @@
 ---
 
 ## 🎙️ Track 11: Creator Research Mode (The Streamer's Edge) 🆕
-*Flipping the engine for competitive analysis.*
-* [ ] **Niche Gap Identification:** Find overlapping keywords that lack recent high-quality videos.
-* [ ] **Pacing Analytics:** Calculate avg. length and structure of growing discovery candidates.
-* [ ] **Obsidian Sync:** "Save to Vault" via `obsidian://new` URI for research logs.
-
----
-
 ## ⚙️ Track 12: High-Performance Backend (Optional) 🆕
-*Decoupling processing for heavy-lifting tasks.*
-* [ ] **FastAPI Bridge:** Spin up a local Python backend for heavy scoring/scraping.
-* [ ] **RL Weighting:** Replace the 5-month rule with Reinforcement Learning based on actual CTR.
-* [ ] **Mixture of Experts (MoE):** Specialized models for Coding vs. Gaming vs. Finance suggestions.
-
----
-
 ## 🤝 Track 13: Sovereignty & Context 🆕
-*Community sharing and mood-based filtering.*
-* [ ] **"Curator Packs":** Export/Import "High Loyalty" creator lists via JSON.
-* [ ] **The Context Dial:** Energy-level filters (Low Energy/Chill vs. High Energy/Learn).
-* [ ] **Time Budgeting:** Filter "Fresh Feed" based on available time + SponsorBlock data.
-
----
-
-## 🔍 Track 14: Deep Vector Search (In Progress) 🔄
-*Finding knowledge using concepts, not just keywords.*
-* [ ] **Knowledge Embedding Pipeline:** Automatically generate semantic embeddings for History Entries.
-* [ ] **Concept Search:** Search history by "Vibe" rather than exact string matching.
-* [ ] **Search UI:** Implement a semantic search bar in the Galaxy Dashboard.
-
----
