@@ -125,6 +125,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const suggestions = await Storage.getSuggestions();
     const creators = await Storage.getCreators();
     
+    // Calculate global top topics for Bridge detection
+    const globalKeywordMap: Record<string, number> = {};
+    Object.values(creators).forEach(c => {
+      if (c.keywords) {
+        Object.entries(c.keywords).forEach(([word, count]) => {
+          globalKeywordMap[word] = (globalKeywordMap[word] || 0) + count;
+        });
+      }
+    });
+    const topGlobalTopics = Object.entries(globalKeywordMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([word]) => word);
+
     const allEmbeddings = await VectorDB.getAllEmbeddings();
     const topCreators = Object.values(creators)
       .sort((a, b) => b.loyaltyScore - a.loyaltyScore)
@@ -154,6 +168,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       let score = 0;
       let matchedCreator: Creator | null = null;
       let matchKeywords: string[] = [];
+      let source = 'System';
 
       if (centroid) {
         const response = await chrome.runtime.sendMessage({
@@ -182,23 +197,18 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
         }
       } else {
-        const keywordMap: Record<string, number> = {};
-        Object.values(creators).forEach(c => {
-          if (c.keywords) {
-            Object.entries(c.keywords).forEach(([word, count]) => {
-              keywordMap[word] = (keywordMap[word] || 0) + count;
-            });
-          }
-        });
         const reasonWords = s.reason.toLowerCase().split(/\s+/);
         reasonWords.forEach(word => {
-          if (keywordMap[word]) score += keywordMap[word] / 100;
+          if (globalKeywordMap[word]) score += globalKeywordMap[word] / 100;
         });
       }
 
-      let aiReason = s.reason;
-      let source = 'System';
+      // Bridge Finder: Does this suggestion span multiple top global topics?
+      const reasonLower = s.reason.toLowerCase();
+      const matchedGlobalTopics = topGlobalTopics.filter(t => reasonLower.includes(t));
+      const isBridge = matchedGlobalTopics.length >= 2;
 
+      let aiReason = s.reason;
       if (matchedCreator && score > CONFIG.SEMANTIC_MATCH_THRESHOLD) {
         const result = await GenerativeService.generateReason(
             s.channelId.replace('/@', '').replace('/', ''),
@@ -209,7 +219,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         source = result.source;
       }
 
-      rankedSuggestions.push({ ...s, matchScore: score, aiReason, aiSource: source });
+      rankedSuggestions.push({ ...s, matchScore: score, aiReason, aiSource: source, isBridge });
     }
 
     const displaySuggestions = rankedSuggestions
@@ -226,6 +236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               <a href="https://www.youtube.com${s.channelId}" target="_blank" class="name">
                 ${s.channelId.replace('/@', '').replace('/', '')}
                 ${s.aiSource !== 'System' ? `<span class="engine-badge">${s.aiSource}</span>` : ''}
+                ${s.isBridge ? `<span class="bridge-badge" title="Connects multiple of your interests!">Bridge</span>` : ''}
               </a>
               <span class="reason ai-insight">${s.aiReason}</span>
             </div>

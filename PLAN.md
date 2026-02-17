@@ -92,12 +92,10 @@
     * [x] Integrated `Transformers.js` via Offscreen Document.
     * [x] Semantic vector storage in IndexedDB.
     * [x] Hybrid ranking (Keyword + Cosine Similarity).
-* [ ] **"The Reason" (Generative UI)**
-    * [ ] **Tech:** Chrome Built-in AI (`window.ai` / Gemini Nano) OR simple template logic. - if this doesnt work we will use a local llm ollama
-    * [ ] **Task:** Summarize *why* a creator is being suggested. (e.g., "Similar pacing to [Creator A] but focuses on [Topic B]").
-* [ ] **The "Bridge" Finder**
-    * [ ] Identify top 2 distinct topic clusters in user history.
-    * [ ] Search for creators that tag *both* clusters.
+* [x] **"The Reason" (Generative UI)** ✅
+* [x] **The "Bridge" Finder** ✅
+    * [x] Logic to identify suggestions matching multiple top interest clusters.
+    * [x] Visual "Bridge" badge in the Fresh Feed.
 
 
 ---
