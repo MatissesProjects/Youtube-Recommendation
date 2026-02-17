@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>The Curator: Galaxy Graph</title>
+    <style>
+        body { margin: 0; background-color: #00050a; color: white; font-family: sans-serif; overflow: hidden; }
+        #header { position: absolute; top: 20px; left: 20px; z-index: 10; pointer-events: none; }
+        h1 { margin: 0; font-size: 1.5em; color: #1a73e8; }
+        #controls { position: absolute; bottom: 20px; right: 20px; z-index: 10; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; backdrop-filter: blur(5px); }
+        .legend { font-size: 0.8em; opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Your Interest Galaxy</h1>
+        <p class="legend">Nodes are creators. Links represent shared topics.</p>
+    </div>
+    <div id="graph-container"></div>
+    <div id="controls">
+        <button id="reset-view" style="cursor:pointer; background:#1a73e8; color:white; border:none; padding:5px 10px; border-radius:4px;">Reset View</button>
+    </div>
+    <script src="dashboard.js"></script>
+</body>
+</html>

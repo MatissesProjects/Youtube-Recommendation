@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const importBtn = document.getElementById('import-btn');
   const refreshBtn = document.getElementById('refresh-btn');
   const discoverBtn = document.getElementById('discover-btn');
+  const galaxyBtn = document.getElementById('galaxy-btn');
   const nukeBtn = document.getElementById('nuke-btn');
 
   function escapeHtml(unsafe: string): string {
@@ -312,6 +313,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   discoverBtn?.addEventListener('click', () => {
     chrome.runtime.sendMessage({ action: 'discover' });
     if (statusElement) statusElement.textContent = 'Discovering new creators...';
+  });
+
+  galaxyBtn?.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'dashboard.html' });
   });
 
   nukeBtn?.addEventListener('click', async () => {
