@@ -43,7 +43,7 @@ export const AIService = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'llama3', // or 'mxbai-embed-large' or whatever the user has
+          model: 'qwen3:8b', // or 'mxbai-embed-large' or whatever the user has
           prompt: text
         })
       });

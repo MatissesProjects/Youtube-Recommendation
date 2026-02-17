@@ -23,7 +23,7 @@ export const GenerativeService = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: 'llama3', 
+                    model: 'qwen3:8b', 
                     prompt: prompt,
                     stream: false,
                     options: { num_predict: 50 }
@@ -67,7 +67,7 @@ export const GenerativeService = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: 'llama3',
+                    model: 'qwen3:8b',
                     prompt: prompt,
                     stream: false
                 })
@@ -102,7 +102,7 @@ export const GenerativeService = {
             const response = await fetch('http://localhost:11434/api/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ model: 'llama3', prompt: prompt, stream: false })
+                body: JSON.stringify({ model: 'qwen3:8b', prompt: prompt, stream: false })
             });
             if (response.ok) {
                 const data = await response.json();
