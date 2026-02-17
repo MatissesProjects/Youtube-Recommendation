@@ -2,6 +2,7 @@ import { Storage } from './storage';
 import { Algorithm } from './algorithm';
 import { VectorDB } from './vectorDb';
 import { AIService } from './aiService';
+import { EnrichmentService } from './enrichmentService';
 import { CONFIG } from './constants';
 
 console.log('Background service worker started.');
@@ -117,7 +118,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
   else if (message.action === 'discover') startDiscovery();
+  else if (message.action === 'startResearch') startResearch();
+  else if (message.action === 'processResearch') {
+    processResearch(message.creatorName, message.data);
+  }
 });
+
+async function processResearch(name: string, data: string) {
+  const creators = await Storage.getCreators();
+  // Match by name
+  const creator = Object.values(creators).find(c => c.name === name);
+  if (creator) {
+    console.log(`Background: Processing research for ${name}`);
+    await EnrichmentService.enrichCreator(creator.id, data);
+  }
+}
+
+async function startResearch() {
+  const creators = await Storage.getCreators();
+  const topCreators = Object.values(creators)
+    .sort((a, b) => b.loyaltyScore - a.loyaltyScore)
+    .filter(c => !c.enrichedDescription)
+    .slice(0, 5);
+
+  for (const creator of topCreators) {
+    // Open a background tab for research - the user can then "Feed" this back or 
+    // we can eventually add a scraper for these results.
+    chrome.tabs.create({ 
+      url: `https://www.google.com/search?q=${encodeURIComponent(creator.name + ' youtube channel niche topics summary')}`, 
+      active: false 
+    });
+  }
+}
 
 async function startDiscovery() {
   const creators = await Storage.getCreators();

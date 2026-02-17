@@ -84,5 +84,32 @@ export const GenerativeService = {
             summary: "AI summarization unavailable. Please check window.ai or Ollama settings.", 
             source: 'System' 
         };
+    },
+
+    async summarizeCreatorInfo(creatorName: string, searchResults: string): Promise<string> {
+        const prompt = `Based on these search results for the YouTube creator "${creatorName}", provide a concise 2-sentence summary of what their content is about and their main niche. Do not use buzzwords. \n\nResults: ${searchResults.substring(0, 2000)}`;
+
+        try {
+            // @ts-ignore
+            if (typeof window.ai !== 'undefined' && window.ai.createTextSession) {
+                // @ts-ignore
+                const session = await window.ai.createTextSession();
+                return await session.prompt(prompt);
+            }
+        } catch (e) {}
+
+        try {
+            const response = await fetch('http://localhost:11434/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: 'llama3', prompt: prompt, stream: false })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                return data.response.trim();
+            }
+        } catch (e) {}
+
+        return "Search-enriched profile.";
     }
 };

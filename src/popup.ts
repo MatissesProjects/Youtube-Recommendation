@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const favoriteVideosList = document.getElementById('favorite-videos-list');
   const importBtn = document.getElementById('import-btn');
   const refreshBtn = document.getElementById('refresh-btn');
+  const researchBtn = document.getElementById('research-btn');
   const discoverBtn = document.getElementById('discover-btn');
   const galaxyBtn = document.getElementById('galaxy-btn');
   const nukeBtn = document.getElementById('nuke-btn');
@@ -394,6 +395,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (statusElement) statusElement.textContent = 'Scores updated!';
       }
     });
+  });
+
+  researchBtn?.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ action: 'startResearch' });
+    if (statusElement) statusElement.textContent = 'Researching creators...';
   });
 
   discoverBtn?.addEventListener('click', () => {

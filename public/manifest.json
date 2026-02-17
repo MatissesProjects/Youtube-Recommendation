@@ -14,6 +14,7 @@
   "host_permissions": [
     "https://*.youtube.com/*",
     "https://www.youtube.com/feeds/videos.xml*",
+    "https://www.google.com/search*",
     "http://localhost/*"
   ],
   "action": {
@@ -35,6 +36,10 @@
     {
       "matches": ["https://www.youtube.com/*/channels*"],
       "js": ["discoveryScraper.js"]
+    },
+    {
+      "matches": ["https://www.google.com/search*"],
+      "js": ["researchScraper.js"]
     }
   ],
   "icons": {

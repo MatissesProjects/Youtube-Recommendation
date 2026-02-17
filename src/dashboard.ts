@@ -112,7 +112,11 @@ async function initGalaxy() {
     const graphContainer = document.getElementById('graph-container')!;
     const graph = ForceGraph()(graphContainer)
         .graphData({ nodes, links })
-        .nodeLabel((node: any) => `${node.name}<br/>Topics: ${node.keywords.slice(0,5).join(', ')}`)
+        .nodeLabel((node: any) => {
+            const creator = creatorsMap[node.id];
+            const description = creator?.enrichedDescription ? `<br/><i style="color: #aaa;">${creator.enrichedDescription}</i>` : '';
+            return `<strong>${node.name}</strong>${description}<br/>Topics: ${node.keywords.slice(0,5).join(', ')}`;
+        })
         .nodeCanvasObject((node: any, ctx, globalScale) => {
             // Safety check for node positions
             if (node.x === undefined || node.y === undefined) return;

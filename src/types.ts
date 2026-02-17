@@ -11,6 +11,7 @@ export interface Creator {
   frequency: number;
   keywords?: Record<string, number>;
   endorsements?: string[]; // IDs of channels this creator featured
+  enrichedDescription?: string; // Information gathered from web search
 }
 
 export interface Annotation {
