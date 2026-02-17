@@ -78,7 +78,7 @@
 
 * [x] **Edge Case: The Binge Watcher** ✅
 * [x] **Edge Case: Shorts** (Skipped)
-* [x] **Unit Testing:** Vitest suite for core algorithm. ✅
+* [x] **Unit Testing:** Vitest suite for core algorithm and AI services. ✅
 * [x] **Privacy Audit:** Verified local-only storage and safe RSS polling. ✅
 * [x] **Data Export:** (Skipped)
 

@@ -2,6 +2,7 @@ import { Storage, Creator } from './storage';
 import { VectorDB, cosineSimilarity } from './vectorDb';
 import { GenerativeService } from './generativeService';
 import { CONFIG } from './constants';
+import { isBridgeCreator } from './utils';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Popup loaded.');
@@ -220,9 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Bridge Finder: Does this suggestion span multiple top global topics?
-      const reasonLower = s.reason.toLowerCase();
-      const matchedGlobalTopics = topGlobalTopics.filter(t => reasonLower.includes(t));
-      const isBridge = matchedGlobalTopics.length >= 2;
+      const isBridge = isBridgeCreator(s.reason, topGlobalTopics);
 
       let aiReason = s.reason;
       if (matchedCreator && score > CONFIG.SEMANTIC_MATCH_THRESHOLD) {
