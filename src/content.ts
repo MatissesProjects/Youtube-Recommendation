@@ -45,6 +45,11 @@ function getVideoKeywords(): string[] {
   return title.split(/\s+/).filter(w => w.length > 3 && !stopWords.has(w));
 }
 
+function getVideoDescription(): string {
+  const descriptionElement = document.querySelector('#description-text, .ytd-video-secondary-info-renderer #description, ytd-expandable-video-description-body-renderer');
+  return (descriptionElement?.textContent || '').trim();
+}
+
 function getVideoTitle(): string {
   return document.title.replace(' - YouTube', '').trim();
 }
@@ -68,8 +73,31 @@ async function logWatch(video: HTMLVideoElement) {
     
     const keywords = getVideoKeywords();
     const videoTitle = getVideoTitle();
-    console.log('The Curator: Extracted keywords:', keywords);
-    console.log('The Curator: Extracted title:', videoTitle);
+    const description = getVideoDescription();
+    
+    // Deeper Keyword Extraction: Frequency analysis of description
+    const descWords = description.toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 4);
+    
+    const wordFreq: Record<string, number> = {};
+    const stopWords = new Set(['google', 'youtube', 'http', 'https', 'www', 'video', 'channel', 'subscribe', 'social', 'media', 'twitter', 'instagram', 'facebook']);
+    
+    descWords.forEach(w => {
+      if (!stopWords.has(w)) {
+        wordFreq[w] = (wordFreq[w] || 0) + 1;
+      }
+    });
+    
+    const descKeywords = Object.entries(wordFreq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 15)
+      .map(([word]) => word);
+
+    const combinedKeywords = [...new Set([...keywords, ...descKeywords])];
+
+    console.log('The Curator: Deep context keywords:', combinedKeywords);
 
     const entry: HistoryEntry = {
       videoId: currentVideoId,
@@ -78,7 +106,7 @@ async function logWatch(video: HTMLVideoElement) {
       watchTime: currentTime,
       totalDuration: duration,
       timestamp: Date.now(),
-      tags: keywords
+      tags: combinedKeywords
     };
 
     await Storage.addHistoryEntry(entry);
