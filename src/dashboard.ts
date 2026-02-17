@@ -51,42 +51,50 @@ async function initGalaxy() {
         .graphData({ nodes, links })
         .nodeLabel((node: any) => `${node.name}<br/>Topics: ${node.keywords.slice(0,5).join(', ')}`)
         .nodeCanvasObject((node: any, ctx, globalScale) => {
+            // Safety check for node positions
+            if (node.x === undefined || node.y === undefined) return;
+
             const label = node.name;
-            const fontSize = 14 / globalScale;
-            ctx.font = `${fontSize}px Sans-Serif`;
+            const fontSize = Math.max(4, 12 / globalScale);
             
-            // Draw Node
+            // Draw Node Circle
             ctx.beginPath();
             ctx.arc(node.x, node.y, node.val, 0, 2 * Math.PI, false);
             ctx.fillStyle = node.isSearchMatch ? '#fff' : node.color;
             ctx.fill();
             
-            // Draw Label
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = node.isSearchMatch ? '#fff' : '#eee';
-            
-            if (globalScale > 1.5) { // Only draw text when zoomed in enough
-                ctx.fillText(label, node.x, node.y + node.val + fontSize);
+            // Draw Glow for matches
+            if (node.isSearchMatch) {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = "#1a73e8";
+                ctx.strokeStyle = "#fff";
+                ctx.lineWidth = 1 / globalScale;
+                ctx.stroke();
+            } else {
+                ctx.shadowBlur = 0;
             }
 
-            // Glow for matches
-            if (node.isSearchMatch) {
-                ctx.strokeStyle = '#1a73e8';
-                ctx.lineWidth = 2 / globalScale;
-                ctx.stroke();
+            // Draw Label
+            if (globalScale > 1.2) {
+                ctx.font = `${fontSize}px Sans-Serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#eee';
+                ctx.fillText(label, node.x, node.y + node.val + fontSize);
             }
         })
-        .d3Force('charge', (d3: any) => d3.forceManyBody().strength(-200))
-        .d3Force('link', (d3: any) => d3.forceLink().distance(d => 150 / (d as any).value))
         .linkWidth(link => Math.sqrt((link as any).value))
         .linkColor(link => (link as any).type === 'semantic' ? 'rgba(26, 115, 232, 0.2)' : 'rgba(255,255,255,0.05)')
         .onNodeClick((node: any) => {
-            if (node.id) window.open(`https://www.youtube.com${node.id}`, '_blank');
+            if (node && node.id) window.open(`https://www.youtube.com${node.id}`, '_blank');
         })
         .onNodeHover(node => {
-            graphContainer.style.cursor = node ? 'pointer' : null as any;
+            graphContainer.style.cursor = node ? 'pointer' : 'default';
         });
+
+    // Correctly apply D3 forces without callbacks
+    graph.d3Force('charge')!.strength(-150);
+    graph.d3Force('link')!.distance((d: any) => 100 / Math.sqrt(d.value || 1));
 
     const searchInput = document.getElementById('semantic-search') as HTMLInputElement;
     const resultsContainer = document.getElementById('search-results');
