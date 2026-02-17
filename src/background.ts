@@ -120,10 +120,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   else if (message.action === 'discover') startDiscovery();
   else if (message.action === 'startResearch') startResearch(message.ids);
   else if (message.action === 'researchAll') researchAll();
+  else if (message.action === 'debugResearch') debugResearch();
   else if (message.action === 'processResearch') {
     processResearch(message.creatorName, message.data, sender.tab?.id);
   }
 });
+
+async function debugResearch() {
+  const creators = await Storage.getCreators();
+  const ids = Object.values(creators)
+    .sort((a, b) => b.loyaltyScore - a.loyaltyScore)
+    .slice(0, 10)
+    .map(c => c.id);
+  console.log(`Background: Debug research for top 10 creators.`);
+  await startResearch(ids);
+}
 
 async function researchAll() {
   const creators = await Storage.getCreators();

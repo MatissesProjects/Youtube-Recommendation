@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const importBtn = document.getElementById('import-btn');
   const refreshBtn = document.getElementById('refresh-btn');
   const researchBtn = document.getElementById('research-btn');
+  const debugResearchBtn = document.getElementById('debug-research-btn');
   const discoverBtn = document.getElementById('discover-btn');
   const galaxyBtn = document.getElementById('galaxy-btn');
   const nukeBtn = document.getElementById('nuke-btn');
@@ -400,6 +401,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   researchBtn?.addEventListener('click', () => {
     chrome.runtime.sendMessage({ action: 'startResearch' });
     if (statusElement) statusElement.textContent = 'Researching creators...';
+  });
+
+  debugResearchBtn?.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ action: 'debugResearch' });
+    if (statusElement) statusElement.textContent = 'Debug: Researching 10 creators...';
   });
 
   // Helper for one-time bulk research
