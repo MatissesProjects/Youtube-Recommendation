@@ -1,37 +1,4 @@
-export interface Creator {
-  id: string; // channelId
-  name: string;
-  lastUploadDate?: number;
-  latestVideo?: {
-    title: string;
-    id: string;
-    published: number;
-  };
-  loyaltyScore: number;
-  frequency: number;
-  keywords?: Record<string, number>;
-}
-
-export interface InterestProfile {
-  topKeywords: Record<string, number>;
-  totalWatches: number;
-}
-
-export interface HistoryEntry {
-  videoId: string;
-  channelId: string;
-  title?: string;
-  watchTime: number; // in seconds
-  totalDuration: number; // in seconds
-  timestamp: number;
-  tags?: string[];
-}
-
-export interface Suggestion {
-  channelId: string;
-  reason: string; // e.g., "Similar to X"
-  status: 'new' | 'ignored' | 'followed';
-}
+import { Creator, HistoryEntry, Suggestion } from './types';
 
 export const Storage = {
   async getCreators(): Promise<Record<string, Creator>> {
@@ -58,10 +25,8 @@ export const Storage = {
 
   async bulkAddHistory(entries: HistoryEntry[]): Promise<void> {
     const history = await this.getHistory();
-    // Use a Set to avoid duplicates if importing multiple times
     const existingIds = new Set(history.map(h => h.videoId + h.timestamp));
     const uniqueNew = entries.filter(e => !existingIds.has(e.videoId + e.timestamp));
-    
     await chrome.storage.local.set({ history: [...history, ...uniqueNew] });
   },
 

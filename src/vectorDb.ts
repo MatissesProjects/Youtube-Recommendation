@@ -1,3 +1,5 @@
+import { EmbeddingEntry } from './types';
+
 export const VectorDB = {
     DB_NAME: 'CuratorVectorDB',
     STORE_NAME: 'embeddings',
@@ -22,7 +24,8 @@ export const VectorDB = {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([this.STORE_NAME], 'readwrite');
             const store = transaction.objectStore(this.STORE_NAME);
-            const request = store.put({ id, embedding, timestamp: Date.now() });
+            const entry: EmbeddingEntry = { id, embedding, timestamp: Date.now() };
+            const request = store.put(entry);
             request.onerror = () => reject(request.error);
             request.onsuccess = () => resolve();
         });
@@ -39,7 +42,7 @@ export const VectorDB = {
         });
     },
 
-    async getAllEmbeddings(): Promise<{id: string, embedding: number[]}[]> {
+    async getAllEmbeddings(): Promise<EmbeddingEntry[]> {
         const db = await this.getDB();
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([this.STORE_NAME], 'readonly');
@@ -60,5 +63,6 @@ export function cosineSimilarity(a: number[], b: number[]): number {
         normA += (a[i] || 0) * (a[i] || 0);
         normB += (b[i] || 0) * (b[i] || 0);
     }
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    const magnitude = Math.sqrt(normA) * Math.sqrt(normB);
+    return magnitude === 0 ? 0 : dotProduct / magnitude;
 }

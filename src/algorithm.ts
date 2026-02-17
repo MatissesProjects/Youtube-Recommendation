@@ -1,14 +1,14 @@
-import { Creator, HistoryEntry } from './storage';
+import { Creator, HistoryEntry } from './types';
+import { CONFIG } from './constants';
 
 export const Algorithm = {
   calculateMetrics(creator: Creator, history: HistoryEntry[]): { score: number, frequency: number } {
     const creatorHistory = history.filter(h => h.channelId === creator.id);
     if (creatorHistory.length === 0) return { score: 0, frequency: 0 };
 
-    // Frequency: How many total videos watched?
     const rawFrequency = creatorHistory.length;
 
-    // Binge-Watcher Session Cap: Max 3 frequency points per day
+    // Binge-Watcher Session Cap
     const dayMap: Record<number, number> = {};
     creatorHistory.forEach(h => {
       const day = Math.floor(h.timestamp / (1000 * 60 * 60 * 24));
@@ -17,28 +17,25 @@ export const Algorithm = {
 
     let effectiveFrequency = 0;
     Object.values(dayMap).forEach(count => {
-      effectiveFrequency += Math.min(count, 3); // Cap each day at 3 points
+      effectiveFrequency += Math.min(count, CONFIG.DAILY_SESSION_CAP);
     });
 
-    // Recency: Days since last watch
+    // Recency
     const lastWatch = Math.max(...creatorHistory.map(h => h.timestamp));
     const daysSinceLastWatch = (Date.now() - lastWatch) / (1000 * 60 * 60 * 24);
 
-    // Loyalty Ratio (Simplified for now: Average completion of last 10 videos)
+    // Loyalty Ratio (Average completion of last 10)
     const recentHistory = creatorHistory.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
     const avgCompletion = recentHistory.reduce((acc, h) => acc + (h.watchTime / (h.totalDuration || 1)), 0) / recentHistory.length;
 
-    // Base Score (0-100)
-    let score = avgCompletion * 70; // Up to 70 points from completion
-    score += Math.min(effectiveFrequency, 30); // Up to 30 points from effective frequency (capped at 30 days of unique engagement)
+    // Base Score
+    let score = (avgCompletion * 70) + Math.min(effectiveFrequency, CONFIG.MAX_FREQUENCY_POINTS);
 
-    // Decay Engine (5-Month Rule)
-    const fiveMonthsInDays = 5 * 30;
-    if (daysSinceLastWatch > fiveMonthsInDays) {
+    // Decay Engine
+    const decayThreshold = CONFIG.DECAY_MONTHS * 30;
+    if (daysSinceLastWatch > decayThreshold) {
       const lastUpload = creator.lastUploadDate || 0;
-      // IF (LastUploadDate < LastWatchDate): exemption (Creator is on hiatus)
       if (lastUpload > lastWatch) {
-        // ELSE: Apply 0.2x weight penalty (User lost interest)
         score *= 0.2;
       }
     }
