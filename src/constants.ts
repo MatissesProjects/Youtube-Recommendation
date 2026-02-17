@@ -13,7 +13,12 @@ export const CONFIG = {
   RABBIT_HOLE: {
     BOOST_FACTOR: 10,
     DURATION_MINUTES: 30
-  }
+  },
+  STOP_WORDS: [
+    'google', 'youtube', 'http', 'https', 'www', 'video', 'channel', 
+    'subscribe', 'social', 'media', 'twitter', 'instagram', 'facebook',
+    'the', 'a', 'an', 'in', 'on', 'of', 'for', 'to', 'and'
+  ]
 };
 
 export const SELECTORS = {
