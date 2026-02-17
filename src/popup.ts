@@ -454,4 +454,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (statusElement) {
     statusElement.textContent = 'The Curator is active.';
   }
+
+  // Listener for status updates from background
+  chrome.storage.onChanged.addListener((changes) => {
+    if (changes.creators && statusElement) {
+        const creators = changes.creators.newValue;
+        const enrichedCount = Object.values(creators).filter((c: any) => c.enrichedDescription && c.enrichedDescription !== "Search-enriched profile (Ollama offline).").length;
+        const totalCount = Object.keys(creators).length;
+        statusElement.textContent = `Enriched ${enrichedCount}/${totalCount} creator profiles.`;
+    }
+  });
 });

@@ -175,37 +175,42 @@ async function startResearch(targetIds?: string[]) {
   if (targetIds && targetIds.length > 0) {
     list = targetIds.map(id => creators[id]).filter(c => c && !isQualityEnriched(c));
   } else {
+    // Sort by frequency (most data) then loyaltyScore
     list = Object.values(creators)
-      .sort((a, b) => b.loyaltyScore - a.loyaltyScore)
+      .sort((a, b) => {
+        if (b.frequency !== a.frequency) return b.frequency - a.frequency;
+        return b.loyaltyScore - a.loyaltyScore;
+      })
       .filter(c => !isQualityEnriched(c))
-      .slice(0, 5);
+      .slice(0, 10); // Batch of 10
   }
 
   if (list.length === 0) {
-    console.log('Background: All requested creators are already quality-enriched. Skipping.');
+    console.log('The Curator [Research]: All quality profiles already built.');
     return;
   }
 
-  console.log(`Background: Starting Stealth Research for ${list.length} creators.`);
+  console.log(`The Curator [Research]: Starting batch for ${list.length} creators (Priority: Highest Frequency).`);
 
-  for (const creator of list) {
-    // Precise query as requested
+  for (let i = 0; i < list.length; i++) {
+    const creator = list[i];
     const query = `youtube channel ${creator.name} general channel information`;
     
-    console.log(`Background: Researching ${creator.name}...`);
+    console.log(`The Curator [Research] [${i+1}/${list.length}]: Searching for "${creator.name}" (Watched ${creator.frequency} times)...`);
+    
     chrome.tabs.create({ 
       url: `https://www.google.com/search?q=${encodeURIComponent(query)}`, 
       active: false 
     });
 
-    // Wait for a significant, randomized "human-like" delay
-    // 15-30 seconds between searches is much safer
     const delay = 15000 + (Math.random() * 15000);
-    console.log(`Background: Waiting ${Math.round(delay/1000)}s before next search to avoid rate limits.`);
-    await new Promise(resolve => setTimeout(resolve, delay));
+    if (i < list.length - 1) {
+        console.log(`The Curator [Research]: Pausing for ${Math.round(delay/1000)}s to remain stealthy...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
   
-  console.log('Background: Stealth Research batch complete.');
+  console.log('The Curator [Research]: Batch complete.');
 }
 
 async function startDiscovery() {
