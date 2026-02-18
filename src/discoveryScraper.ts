@@ -1,5 +1,10 @@
 import { Storage, Suggestion } from './storage';
 
+if (!window.location.hostname.includes('youtube.com')) {
+  // @ts-ignore
+  return;
+}
+
 console.log('Discovery scraper active...');
 
 async function scrapeFeaturedChannels() {

@@ -3,6 +3,11 @@ import { CONFIG, SELECTORS } from './constants';
 import { SponsorSegment } from './types';
 import { extractKeywords } from './utils';
 
+if (!window.location.hostname.includes('youtube.com')) {
+  // @ts-ignore
+  return;
+}
+
 console.log('The Curator: Watcher script active.');
 
 let currentVideoId: string | null = null;

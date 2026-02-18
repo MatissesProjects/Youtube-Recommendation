@@ -2,6 +2,11 @@ import { Storage, Creator } from './storage';
 import { extractKeywords } from './utils';
 import { CONFIG } from './constants';
 
+if (!window.location.hostname.includes('youtube.com')) {
+  // @ts-ignore
+  return;
+}
+
 console.log('The Curator: History scraper loaded.');
 
 function showNotification(message: string, type: 'success' | 'error' = 'success') {
