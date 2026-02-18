@@ -1,7 +1,7 @@
 import { Storage, HistoryEntry, Creator, Suggestion } from './storage';
 import { CONFIG, SELECTORS } from './constants';
 import { SponsorSegment } from './types';
-import { extractKeywords } from './utils';
+import { extractKeywords, detectCollaborations } from './utils';
 
 if (!window.location.hostname.includes('youtube.com')) {
   // @ts-ignore
@@ -162,6 +162,20 @@ function getVideoTitle(): string {
   return document.title.replace(' - YouTube', '').trim();
 }
 
+function getVideoCategory(): string {
+  const metaCategory = document.querySelector('meta[itemprop="genre"]');
+  return metaCategory?.getAttribute('content') || 'General';
+}
+
+function getEngagementSignals() {
+  const likeBtn = document.querySelector('like-button-view-model button[aria-pressed="true"]');
+  const commentBox = document.querySelector('#comment-teaser, #simple-box');
+  return {
+    liked: !!likeBtn,
+    commented: !!commentBox // If box is open/active, user likely engaging
+  };
+}
+
 let lastLogCheck = 0;
 let lastProgressLog = 0;
 
@@ -194,14 +208,20 @@ async function logWatch(video: HTMLVideoElement) {
     const keywords = getVideoKeywords();
     const videoTitle = getVideoTitle();
     const description = getVideoDescription();
+    const category = getVideoCategory();
+    const engagement = getEngagementSignals();
     
     const descKeywords = extractKeywords(description, CONFIG.STOP_WORDS);
     const combinedKeywords = [...new Set([...keywords, ...descKeywords])];
+    const collaborations = detectCollaborations(description);
 
     const entry: HistoryEntry = {
       videoId: currentVideoId,
       channelId: currentChannelId,
       title: videoTitle,
+      category: category,
+      liked: engagement.liked,
+      commented: engagement.commented,
       watchTime: currentTime,
       totalDuration: duration,
       trueDuration: trueDuration,
@@ -227,7 +247,8 @@ async function logWatch(video: HTMLVideoElement) {
       loyaltyScore: existing ? existing.loyaltyScore : 0,
       frequency: (existing ? existing.frequency : 0) + 1,
       lastUploadDate: existing?.lastUploadDate,
-      keywords: existingKeywords
+      keywords: existingKeywords,
+      endorsements: [...new Set([...(existing?.endorsements || []), ...collaborations])]
     };
     
     creators[currentChannelId] = creator;

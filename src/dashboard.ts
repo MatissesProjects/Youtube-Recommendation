@@ -21,10 +21,19 @@ async function initGalaxy() {
             .sort((a, b) => b[1] - a[1]);
         const primaryKeyword = creatorKeywords[0]?.[0] || 'unknown';
         
+        // Find most frequent category for this creator
+        const creatorHistory = history.filter(h => h.channelId === c.id);
+        const categoryFreq: Record<string, number> = {};
+        creatorHistory.forEach(h => {
+            if (h.category) categoryFreq[h.category] = (categoryFreq[h.category] || 0) + 1;
+        });
+        const topCategory = Object.entries(categoryFreq).sort((a, b) => b[1] - a[1])[0]?.[0] || 'General';
+
         // Simple hash function for consistent colors based on primary keyword
         let hash = 0;
-        for (let i = 0; i < primaryKeyword.length; i++) {
-            hash = primaryKeyword.charCodeAt(i) + ((hash << 5) - hash);
+        const colorSeed = topCategory; // Color by category for better grouping
+        for (let i = 0; i < colorSeed.length; i++) {
+            hash = colorSeed.charCodeAt(i) + ((hash << 5) - hash);
         }
         const hue = Math.abs(hash % 360);
 
@@ -34,6 +43,7 @@ async function initGalaxy() {
             val: Math.max(4, (c.loyaltyScore / 8)), 
             color: `hsl(${hue}, 70%, 60%)`,
             keywords: creatorKeywords.map(([k]) => k),
+            category: topCategory,
             isSearchMatch: false
         };
     });
@@ -52,12 +62,15 @@ async function initGalaxy() {
             }
 
             // Relaxed thresholds for more links
-            if (shared.length >= 1 || semanticSim > 0.70) {
+            if (shared.length >= 1 || semanticSim > 0.70 || nodes[i].category === nodes[j].category) {
+                let value = (shared.length * 4) + (semanticSim * 20);
+                if (nodes[i].category === nodes[j].category && nodes[i].category !== 'General') value += 5;
+
                 links.push({
                     source: nodes[i].id,
                     target: nodes[j].id,
-                    value: (shared.length * 4) + (semanticSim * 20),
-                    type: semanticSim > 0.80 ? 'semantic' : 'keyword'
+                    value: value,
+                    type: semanticSim > 0.80 ? 'semantic' : (nodes[i].category === nodes[j].category ? 'category' : 'keyword')
                 });
             }
         }
@@ -115,7 +128,7 @@ async function initGalaxy() {
         .nodeLabel((node: any) => {
             const creator = creatorsMap[node.id];
             const description = creator?.enrichedDescription ? `<br/><i style="color: #aaa;">${creator.enrichedDescription}</i>` : '';
-            return `<strong>${node.name}</strong>${description}<br/>Topics: ${node.keywords.slice(0,5).join(', ')}`;
+            return `<strong>${node.name}</strong> [${node.category}]${description}<br/>Topics: ${node.keywords.slice(0,5).join(', ')}`;
         })
         .nodeCanvasObject((node: any, ctx, globalScale) => {
             // Safety check for node positions
@@ -156,6 +169,7 @@ async function initGalaxy() {
             if (type === 'semantic') return 'rgba(66, 133, 244, 0.4)'; // Blue
             if (type === 'social') return 'rgba(244, 180, 0, 0.5)';   // Gold/Yellow
             if (type === 'temporal') return 'rgba(15, 157, 88, 0.4)'; // Green
+            if (type === 'category') return 'rgba(234, 67, 53, 0.3)'; // Red/Coral
             return 'rgba(255, 255, 255, 0.15)'; // Keyword (White)
         })
         .onNodeClick((node: any) => {

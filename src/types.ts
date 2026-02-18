@@ -29,6 +29,9 @@ export interface HistoryEntry {
   videoId: string;
   channelId: string;
   title?: string;
+  category?: string;
+  liked?: boolean;
+  commented?: boolean;
   watchTime: number; 
   totalDuration: number;
   timestamp: number;

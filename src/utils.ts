@@ -28,3 +28,25 @@ export function normalizeYoutubeUrl(path: string): string {
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     return `https://www.youtube.com${cleanPath}`;
 }
+
+export function detectCollaborations(text: string): string[] {
+    // Pattern to find @mentions or links to other channels in descriptions
+    const mentionPattern = /@([a-zA-Z0-9._-]+)/g;
+    const channelLinkPattern = /youtube\.com\/(channel\/|@|user\/)([a-zA-Z0-9._-]+)/g;
+    
+    const collaborations = new Set<string>();
+    
+    let match;
+    while ((match = mentionPattern.exec(text)) !== null) {
+        if (match[1]) collaborations.add(`/@${match[1]}`);
+    }
+    
+    while ((match = channelLinkPattern.exec(text)) !== null) {
+        if (match[2]) {
+            const prefix = match[1] === 'channel/' ? '/channel/' : '/@';
+            collaborations.add(`${prefix}${match[2]}`);
+        }
+    }
+    
+    return Array.from(collaborations);
+}
