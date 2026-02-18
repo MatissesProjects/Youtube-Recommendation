@@ -1,5 +1,5 @@
 import { Storage } from './storage';
-import { GenerativeService } from './generativeService';
+import { AIService } from './aiService';
 import { extractKeywords } from './utils';
 import { CONFIG } from './constants';
 
@@ -9,7 +9,7 @@ export const EnrichmentService = {
         const creator = creators[channelId];
         if (!creator) return;
 
-        const summary = await GenerativeService.summarizeCreatorInfo(creator.name, searchResults);
+        const summary = await AIService.summarizeCreatorInfo(creator.name, searchResults);
 
         if (summary) {
             creator.enrichedDescription = summary;

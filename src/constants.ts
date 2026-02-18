@@ -10,6 +10,8 @@ export const CONFIG = {
   RSS_POLL_INTERVAL_MINS: 24 * 60,
   SCORE_UPDATE_INTERVAL_MINS: 4 * 60,
   EMBEDDING_SYNC_COUNT: 100, // Sync more creators for better semantic clustering
+  DEFAULT_LLM_MODEL: 'qwen3:8b', // Standardize model
+  DEFAULT_EMBEDDING_MODEL: 'nomic-embed-text', // Good default for embeddings
   RABBIT_HOLE: {
     BOOST_FACTOR: 10,
     DURATION_MINUTES: 30

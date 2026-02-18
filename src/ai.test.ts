@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { cosineSimilarity } from './vectorDb';
 import { isBridgeCreator } from './utils';
-import { GenerativeService } from './generativeService';
+import { AIService } from './aiService';
 
 describe('Semantic Utilities', () => {
   it('cosineSimilarity should return 1 for identical vectors', () => {
@@ -28,7 +28,7 @@ describe('Semantic Utilities', () => {
   });
 });
 
-describe('GenerativeService', () => {
+describe('AIService', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
     // @ts-ignore
@@ -36,7 +36,7 @@ describe('GenerativeService', () => {
   });
 
   it('should fallback to Template when no AI is available', async () => {
-    const result = await GenerativeService.generateReason('NewGuy', 'FavGuy', ['tech']);
+    const result = await AIService.generateReason('NewGuy', 'FavGuy', ['tech']);
     expect(result.source).toBe('System');
     expect(result.reason).toContain('Semantic match');
   });
@@ -48,7 +48,7 @@ describe('GenerativeService', () => {
       json: () => Promise.resolve({ response: 'AI generated reason' })
     });
 
-    const result = await GenerativeService.generateReason('NewGuy', 'FavGuy', ['tech']);
+    const result = await AIService.generateReason('NewGuy', 'FavGuy', ['tech']);
     expect(result.source).toBe('Ollama');
     expect(result.reason).toBe('AI generated reason');
   });

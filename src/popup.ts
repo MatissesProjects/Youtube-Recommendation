@@ -1,6 +1,6 @@
 import { Storage, Creator } from './storage';
 import { VectorDB, cosineSimilarity } from './vectorDb';
-import { GenerativeService } from './generativeService';
+import { AIService } from './aiService';
 import { CONFIG } from './constants';
 import { isBridgeCreator } from './utils';
 
@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const importBtn = document.getElementById('import-btn');
   const refreshBtn = document.getElementById('refresh-btn');
   const researchBtn = document.getElementById('research-btn');
-  const debugResearchBtn = document.getElementById('debug-research-btn');
   const discoverBtn = document.getElementById('discover-btn');
   const galaxyBtn = document.getElementById('galaxy-btn');
   const nukeBtn = document.getElementById('nuke-btn');
@@ -322,7 +321,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       let aiReason = s.reason;
       if (matchedCreator && score > CONFIG.SEMANTIC_MATCH_THRESHOLD) {
-        const result = await GenerativeService.generateReason(
+        const result = await AIService.generateReason(
             s.channelId.replace('/@', '').replace('/', ''),
             matchedCreator.name,
             matchKeywords
@@ -408,24 +407,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     chrome.runtime.sendMessage({ action: 'startResearch' });
     if (statusElement) statusElement.textContent = 'Researching creators...';
-  });
-
-  debugResearchBtn?.addEventListener('click', async () => {
-    const settings = await Storage.getSettings();
-    if (settings.isBotThrottledUntil > Date.now()) {
-      alert('Research is currently paused.');
-      return;
-    }
-    chrome.runtime.sendMessage({ action: 'debugResearch' });
-    if (statusElement) statusElement.textContent = 'Debug: Researching 10 creators...';
-  });
-
-  // Helper for one-time bulk research
-  aiStatusElement?.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    if (confirm('Research ALL creators in background? (Opens many tabs)')) {
-      chrome.runtime.sendMessage({ action: 'researchAll' });
-    }
   });
 
   discoverBtn?.addEventListener('click', () => {
