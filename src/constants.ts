@@ -20,7 +20,8 @@ export const CONFIG = {
     'google', 'youtube', 'http', 'https', 'www', 'video', 'channel', 
     'subscribe', 'social', 'media', 'twitter', 'instagram', 'facebook',
     'the', 'a', 'an', 'in', 'on', 'of', 'for', 'to', 'and', 'with', 'from',
-    'this', 'that', 'your', 'is', 'are', 'was', 'were', 'be', 'been', 'being'
+    'this', 'that', 'your', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'ollama', 'offline', 'profile', 'enriched', 'search', 'curator', 'video', 'youtube'
   ]
 };
 
