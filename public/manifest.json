@@ -32,6 +32,10 @@
       "js": ["historyScraper.js"]
     },
     {
+      "matches": ["https://www.youtube.com/feed/channels*"],
+      "js": ["subscriptionScraper.js"]
+    },
+    {
       "matches": ["https://www.youtube.com/*/channels*"],
       "js": ["discoveryScraper.js"]
     },

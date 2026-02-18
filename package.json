@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npx esbuild src/background.ts src/content.ts src/popup.ts src/historyScraper.ts src/discoveryScraper.ts src/dashboard.ts src/researchScraper.ts --bundle --outdir=dist --sourcemap --target=esnext && powershell -Command \"Copy-Item -Path 'public/*' -Destination 'dist' -Recurse -Force\"",
+    "build": "npx esbuild src/background.ts src/content.ts src/popup.ts src/historyScraper.ts src/subscriptionScraper.ts src/discoveryScraper.ts src/dashboard.ts src/researchScraper.ts --bundle --outdir=dist --sourcemap --target=esnext && powershell -Command \"Copy-Item -Path 'public/*' -Destination 'dist' -Recurse -Force\"",
     "test": "vitest run"
   },
   "repository": {

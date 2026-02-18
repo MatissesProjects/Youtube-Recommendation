@@ -3,12 +3,12 @@ import { CONFIG, SELECTORS } from './constants';
 import { SponsorSegment } from './types';
 import { extractKeywords, detectCollaborations } from './utils';
 
-if (!window.location.hostname.includes('youtube.com')) {
-  // @ts-ignore
-  return;
-}
+(function() {
+  if (!window.location.hostname.includes('youtube.com')) {
+    return;
+  }
 
-console.log('The Curator: Watcher script active.');
+  console.log('The Curator: Watcher script active.');
 
 let currentVideoId: string | null = null;
 let currentChannelId: string | null = null;
@@ -395,3 +395,4 @@ chrome.storage.onChanged.addListener((changes) => {
     applyDeHype();
   }
 });
+})();
