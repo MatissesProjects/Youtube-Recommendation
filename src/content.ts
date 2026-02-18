@@ -1,7 +1,6 @@
 import { Storage, HistoryEntry, Creator, Suggestion } from './storage';
 import { CONFIG, SELECTORS } from './constants';
 import { SponsorSegment } from './types';
-import { GenerativeService } from './generativeService';
 import { extractKeywords } from './utils';
 
 console.log('The Curator: Watcher script active.');
@@ -158,7 +157,14 @@ function getVideoTitle(): string {
   return document.title.replace(' - YouTube', '').trim();
 }
 
+let lastLogCheck = 0;
+let lastProgressLog = 0;
+
 async function logWatch(video: HTMLVideoElement) {
+  const now = Date.now();
+  if (now - lastLogCheck < 1000) return; // Throttle to 1s
+  lastLogCheck = now;
+
   if (hasLoggedCurrentVideo || !currentVideoId || !currentChannelId) return;
 
   const duration = video.duration;
@@ -172,8 +178,9 @@ async function logWatch(video: HTMLVideoElement) {
   // Note: Skipping fluff segments doesn't penalize you.
   const completionRatio = currentTime / trueDuration;
   
-  if (Math.floor(currentTime) % 30 === 0) {
+  if (currentTime - lastProgressLog >= 30) {
     console.log(`The Curator: Progress ${Math.round(completionRatio * 100)}% (True Duration: ${Math.round(trueDuration)}s)`);
+    lastProgressLog = currentTime;
   }
 
   if (completionRatio > CONFIG.COMPLETION_THRESHOLD || currentTime > CONFIG.MIN_WATCH_TIME_SECONDS) {
