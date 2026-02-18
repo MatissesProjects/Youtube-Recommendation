@@ -27,9 +27,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const rabbitHoleStatus = document.getElementById('rabbit-hole-status');
   const focusModeToggle = document.getElementById('focus-mode-toggle') as HTMLInputElement;
   const dehypeToggle = document.getElementById('dehype-toggle') as HTMLInputElement;
+  const throttlingWarning = document.getElementById('throttling-warning');
 
   async function initSettings() {
     const settings = await Storage.getSettings();
+    updateThrottlingWarning(settings.isBotThrottledUntil);
     if (focusModeToggle) {
       focusModeToggle.checked = settings.focusMode;
       focusModeToggle.addEventListener('change', async () => {
@@ -398,12 +400,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  researchBtn?.addEventListener('click', () => {
+  researchBtn?.addEventListener('click', async () => {
+    const settings = await Storage.getSettings();
+    if (settings.isBotThrottledUntil > Date.now()) {
+      alert('Research is currently paused due to a bot check. Please wait for the cooling off period or solve the CAPTCHA in a Google Search tab.');
+      return;
+    }
     chrome.runtime.sendMessage({ action: 'startResearch' });
     if (statusElement) statusElement.textContent = 'Researching creators...';
   });
 
-  debugResearchBtn?.addEventListener('click', () => {
+  debugResearchBtn?.addEventListener('click', async () => {
+    const settings = await Storage.getSettings();
+    if (settings.isBotThrottledUntil > Date.now()) {
+      alert('Research is currently paused.');
+      return;
+    }
     chrome.runtime.sendMessage({ action: 'debugResearch' });
     if (statusElement) statusElement.textContent = 'Debug: Researching 10 creators...';
   });
@@ -455,8 +467,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     statusElement.textContent = 'The Curator is active.';
   }
 
+  function updateThrottlingWarning(throttledUntil: number) {
+    if (throttlingWarning) {
+      if (throttledUntil > Date.now()) {
+        const hoursLeft = Math.ceil((throttledUntil - Date.now()) / (1000 * 60 * 60));
+        throttlingWarning.style.display = 'block';
+        throttlingWarning.textContent = `⚠️ Research paused for ${hoursLeft}h (Bot check).`;
+      } else {
+        throttlingWarning.style.display = 'none';
+      }
+    }
+  }
+
   // Listener for status updates from background
   chrome.storage.onChanged.addListener((changes) => {
+    if (changes.settings && changes.settings.newValue) {
+      updateThrottlingWarning(changes.settings.newValue.isBotThrottledUntil);
+    }
     if (changes.creators && statusElement) {
         const creators = changes.creators.newValue;
         const enrichedCount = Object.values(creators).filter((c: any) => c.enrichedDescription && c.enrichedDescription !== "Search-enriched profile (Ollama offline).").length;
