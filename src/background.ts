@@ -12,8 +12,11 @@ const currentlyResearching = new Set<string>();
 let stopRequested = false;
 
 chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason === 'install') {
+  if (details.reason === 'install' || details.reason === 'update') {
     setupAlarms();
+    Storage.cleanupKeywords(CONFIG.STOP_WORDS).then(() => {
+      console.log('Background: Keywords scrubbed of noise words.');
+    });
   }
 });
 

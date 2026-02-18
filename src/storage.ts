@@ -124,5 +124,28 @@ export const Storage = {
 
   async exportAllData(): Promise<any> {
     return await chrome.storage.local.get(null);
+  },
+
+  async cleanupKeywords(badWords: string[]): Promise<void> {
+    const creators = await this.getCreators();
+    const badWordsSet = new Set(badWords.map(w => w.toLowerCase()));
+    let changed = false;
+
+    for (const id in creators) {
+      const creator = creators[id];
+      if (creator && creator.keywords) {
+        const originalKeys = Object.keys(creator.keywords);
+        for (const word of originalKeys) {
+          if (badWordsSet.has(word.toLowerCase()) || word.length < 4) {
+            delete creator.keywords[word];
+            changed = true;
+          }
+        }
+      }
+    }
+
+    if (changed) {
+      await chrome.storage.local.set({ creators });
+    }
   }
 };

@@ -21,7 +21,8 @@ export const CONFIG = {
     'subscribe', 'social', 'media', 'twitter', 'instagram', 'facebook',
     'the', 'a', 'an', 'in', 'on', 'of', 'for', 'to', 'and', 'with', 'from',
     'this', 'that', 'your', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-    'ollama', 'offline', 'profile', 'enriched', 'search', 'curator', 'video', 'youtube'
+    'ollama', 'offline', 'profile', 'enriched', 'search', 'curator', 'video', 'youtube',
+    'about', 'after', 'all', 'also', 'any', 'back', 'because', 'but', 'can', 'come', 'could', 'day', 'do', 'even', 'first', 'get', 'give', 'go', 'good', 'have', 'he', 'her', 'him', 'his', 'how', 'into', 'it', 'its', 'just', 'know', 'like', 'look', 'make', 'me', 'most', 'my', 'new', 'no', 'not', 'now', 'only', 'or', 'other', 'our', 'out', 'over', 'people', 'say', 'see', 'she', 'some', 'take', 'tell', 'than', 'their', 'them', 'then', 'there', 'these', 'they', 'think', 'time', 'up', 'use', 'very', 'want', 'way', 'we', 'well', 'what', 'when', 'which', 'who', 'will', 'year', 'you', 'your'
   ]
 };
 

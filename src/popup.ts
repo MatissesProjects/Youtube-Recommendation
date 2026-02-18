@@ -448,6 +448,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     statusElement.textContent = 'The Curator is active.';
   }
 
+  aiStatusElement?.addEventListener('contextmenu', async (e) => {
+    e.preventDefault();
+    if (confirm('Scrub noise words from your Galaxy? This will break up the "one big cluster".')) {
+      await Storage.cleanupKeywords(CONFIG.STOP_WORDS);
+      renderTopTopics();
+      if (statusElement) statusElement.textContent = 'Keywords scrubbed!';
+    }
+  });
+
   function updateThrottlingWarning(throttledUntil: number) {
     if (throttlingWarning) {
       if (throttledUntil > Date.now()) {
