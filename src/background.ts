@@ -7,6 +7,8 @@ import { CONFIG } from './constants';
 
 console.log('Background service worker started.');
 
+const currentlyResearching = new Set<string>();
+
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     setupAlarms();
@@ -150,6 +152,7 @@ async function processResearch(name: string, data: string, tabId?: number) {
   if (creator) {
     console.log(`Background: Processing research for ${name}`);
     await EnrichmentService.enrichCreator(creator.id, data);
+    currentlyResearching.delete(creator.id);
     
     if (tabId) {
       // Close the tab automatically after successful processing
@@ -173,7 +176,7 @@ async function startResearch(targetIds?: string[]) {
   };
 
   if (targetIds && targetIds.length > 0) {
-    list = targetIds.map(id => creators[id]).filter(c => c && !isQualityEnriched(c));
+    list = targetIds.map(id => creators[id]).filter(c => c && !isQualityEnriched(c) && !currentlyResearching.has(c.id));
   } else {
     // Sort by frequency (most data) then loyaltyScore
     list = Object.values(creators)
@@ -181,12 +184,12 @@ async function startResearch(targetIds?: string[]) {
         if (b.frequency !== a.frequency) return b.frequency - a.frequency;
         return b.loyaltyScore - a.loyaltyScore;
       })
-      .filter(c => !isQualityEnriched(c))
+      .filter(c => !isQualityEnriched(c) && !currentlyResearching.has(c.id))
       .slice(0, 10); // Batch of 10
   }
 
   if (list.length === 0) {
-    console.log('The Curator [Research]: All quality profiles already built.');
+    console.log('The Curator [Research]: All quality profiles already built or currently in progress.');
     return;
   }
 
@@ -194,6 +197,7 @@ async function startResearch(targetIds?: string[]) {
 
   for (let i = 0; i < list.length; i++) {
     const creator = list[i];
+    currentlyResearching.add(creator.id);
     const query = `youtube channel ${creator.name} general channel information`;
     
     console.log(`The Curator [Research] [${i+1}/${list.length}]: Searching for "${creator.name}" (Watched ${creator.frequency} times)...`);
