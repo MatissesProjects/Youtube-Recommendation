@@ -6,11 +6,13 @@ export interface RabbitHoleState {
 export interface AppSettings {
   focusMode: boolean;
   deHype: boolean;
+  isBotThrottledUntil: number; // timestamp in ms
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   focusMode: false,
-  deHype: false
+  deHype: false,
+  isBotThrottledUntil: 0
 };
 
 export const Storage = {
