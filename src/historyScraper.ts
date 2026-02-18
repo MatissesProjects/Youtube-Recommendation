@@ -4,6 +4,42 @@ import { CONFIG } from './constants';
 
 console.log('The Curator: History scraper loaded.');
 
+function showNotification(message: string, type: 'success' | 'error' = 'success') {
+  const existing = document.getElementById('curator-notification');
+  if (existing) existing.remove();
+
+  const notif = document.createElement('div');
+  notif.id = 'curator-notification';
+  notif.style.cssText = `
+    position: fixed; 
+    top: 20px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    background: ${type === 'success' ? '#2ba640' : '#d93025'}; 
+    color: white; 
+    padding: 15px 30px; 
+    border-radius: 8px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
+    z-index: 10000; 
+    font-family: Roboto, Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  `;
+  notif.innerText = message;
+  document.body.appendChild(notif);
+
+  // Fade in
+  requestAnimationFrame(() => notif.style.opacity = '1');
+
+  // Fade out
+  setTimeout(() => {
+    notif.style.opacity = '0';
+    setTimeout(() => notif.remove(), 300);
+  }, 5000);
+}
+
 function injectImportButton() {
   if (document.getElementById('curator-import-btn')) return;
 
@@ -30,7 +66,7 @@ function injectImportButton() {
       await scrapeHistory();
     } catch (e) {
       console.error('The Curator: Scrape failed', e);
-      alert('Error during import. Check console for details.');
+      showNotification('Error during import. Check console for details.', 'error');
     }
     btn.textContent = 'Import History to The Curator';
     btn.disabled = false;
@@ -46,7 +82,7 @@ async function scrapeHistory() {
   console.log(`The Curator: Processing ${items.length} items.`);
 
   if (items.length === 0) {
-    alert("No videos found. YouTube's layout might have changed. Try scrolling down.");
+    showNotification("No videos found. Scroll down to load more history.", 'error');
     return;
   }
 
@@ -145,7 +181,7 @@ async function scrapeHistory() {
     chrome.runtime.sendMessage({ action: 'startResearch', ids: newCreatorIds.slice(0, 15) });
   }
 
-  alert(`Import Finished!\n- Videos Processed: ${items.length}\n- New Creators: ${newCount}\n- History Entries Seeded: ${historyEntries.length}`);
+  showNotification(`Import Finished! Processed ${items.length} videos, ${newCount} new creators, ${historyEntries.length} entries.`);
 }
 
 setTimeout(injectImportButton, 2000);
