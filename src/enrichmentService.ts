@@ -14,13 +14,15 @@ export const EnrichmentService = {
         if (summary) {
             creator.enrichedDescription = summary;
             
-            // Also extract new keywords from the enriched description
-            const extraKeywords = extractKeywords(summary, CONFIG.STOP_WORDS);
-            if (!creator.keywords) creator.keywords = {};
-            extraKeywords.forEach(k => {
-                // Weight search-derived keywords more heavily to drive clustering
-                creator.keywords![k] = (creator.keywords![k] || 0) + 5;
-            });
+            // Avoid extracting keywords from the technical fallback message
+            if (summary !== "Search-enriched profile (Ollama offline).") {
+                const extraKeywords = extractKeywords(summary, CONFIG.STOP_WORDS);
+                if (!creator.keywords) creator.keywords = {};
+                extraKeywords.forEach(k => {
+                    // Weight search-derived keywords more heavily to drive clustering
+                    creator.keywords![k] = (creator.keywords![k] || 0) + 5;
+                });
+            }
 
             await Storage.saveCreator(creator);
         }

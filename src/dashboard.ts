@@ -10,7 +10,11 @@ async function initGalaxy() {
     const creatorsMap = await Storage.getCreators();
     const history = await Storage.getHistory();
     const allEmbeddings = await VectorDB.getAllEmbeddings();
-    const creators = Object.values(creatorsMap).filter(c => c.frequency >= 1);
+    const creators = Object.values(creatorsMap).filter(c => {
+        // Hide "Low Information" nodes that only have defaults
+        if (c.frequency < 2 && (!c.enrichedDescription || c.enrichedDescription.includes('offline'))) return false;
+        return c.frequency >= 1;
+    });
     const stopWordsSet = new Set(CONFIG.STOP_WORDS);
     
     const embeddingMap = new Map(allEmbeddings.map(e => [e.id, e.embedding]));
@@ -61,16 +65,18 @@ async function initGalaxy() {
                 semanticSim = cosineSimilarity(embA, embB);
             }
 
+            const sharedCategory = nodes[i].category === nodes[j].category && nodes[i].category !== 'General';
+
             // Relaxed thresholds for more links
-            if (shared.length >= 1 || semanticSim > 0.70 || nodes[i].category === nodes[j].category) {
+            if (shared.length >= 1 || semanticSim > 0.70 || sharedCategory) {
                 let value = (shared.length * 4) + (semanticSim * 20);
-                if (nodes[i].category === nodes[j].category && nodes[i].category !== 'General') value += 5;
+                if (sharedCategory) value += 5;
 
                 links.push({
                     source: nodes[i].id,
                     target: nodes[j].id,
                     value: value,
-                    type: semanticSim > 0.80 ? 'semantic' : (nodes[i].category === nodes[j].category ? 'category' : 'keyword')
+                    type: semanticSim > 0.80 ? 'semantic' : (sharedCategory ? 'category' : 'keyword')
                 });
             }
         }
