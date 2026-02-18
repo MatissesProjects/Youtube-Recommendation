@@ -2,7 +2,7 @@ import { Creator, HistoryEntry } from './types';
 import { CONFIG } from './constants';
 
 export const Algorithm = {
-  calculateMetrics(creator: Creator, history: HistoryEntry[]): { score: number, frequency: number } {
+  calculateMetrics(creator: Creator, history: HistoryEntry[], allCreators: Record<string, Creator>): { score: number, frequency: number } {
     const creatorHistory = history.filter(h => h.channelId === creator.id);
     if (creatorHistory.length === 0) return { score: 0, frequency: 0 };
 
@@ -40,6 +40,17 @@ export const Algorithm = {
     // Base Score
     let score = (avgCompletion * 70) + Math.min(effectiveFrequency, CONFIG.MAX_FREQUENCY_POINTS);
 
+    // Social Boost: Check if this creator is endorsed by other high-loyalty creators
+    // We pass the full creators map to the metrics function for this
+    const endorsers = Object.values(allCreators).filter(other => 
+      other.id !== creator.id && 
+      other.loyaltyScore > 80 && 
+      other.endorsements?.includes(creator.id)
+    );
+    if (endorsers.length > 0) {
+      score += (endorsers.length * 5); // +5 per high-loyalty endorser
+    }
+
     if (avgFluffRatio < 0.5) {
       score *= 0.5; // Heavy penalty for content farms
     } else if (avgFluffRatio < 0.7) {
@@ -66,7 +77,7 @@ export const Algorithm = {
     for (const id in updatedCreators) {
       const creator = updatedCreators[id];
       if (creator) {
-        const metrics = this.calculateMetrics(creator, history);
+        const metrics = this.calculateMetrics(creator, history, updatedCreators);
         creator.loyaltyScore = metrics.score;
         creator.frequency = metrics.frequency;
       }

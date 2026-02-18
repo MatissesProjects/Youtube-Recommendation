@@ -4,6 +4,7 @@ import { VectorDB } from './vectorDb';
 import { AIService } from './aiService';
 import { EnrichmentService } from './enrichmentService';
 import { CONFIG } from './constants';
+import { extractKeywords, detectCollaborations } from './utils';
 
 console.log('Background service worker started.');
 
@@ -92,6 +93,8 @@ async function pollRSS() {
     .sort((a, b) => b.loyaltyScore - a.loyaltyScore)
     .slice(0, 50);
 
+  console.log(`Background: Polling RSS for ${topCreators.length} priority creators...`);
+
   for (const creator of topCreators) {
     try {
       if (creator.id.includes('/@') || creator.id.includes('/channel/')) {
@@ -100,19 +103,55 @@ async function pollRSS() {
         if (!response.ok) continue;
         const text = await response.text();
         
-        const titleMatch = text.match(/<entry>[\s\S]*?<title>(.*?)<\/title>/);
-        const idMatch = text.match(/<yt:videoId>(.*?)<\/yt:videoId>/);
-        const dateMatch = text.match(/<published>(.*?)<\/published>/);
+        // Match all entries
+        const entryRegex = /<entry>([\s\S]*?)<\/entry>/g;
+        let match;
+        let entriesFound = 0;
 
-        if (dateMatch) {
-          creator.lastUploadDate = new Date(dateMatch[1]!).getTime();
-          if (titleMatch && idMatch) {
-            creator.latestVideo = { title: titleMatch[1]!, id: idMatch[1]!, published: creator.lastUploadDate };
+        while ((match = entryRegex.exec(text)) !== null) {
+          const entryContent = match[1]!;
+          const titleMatch = entryContent.match(/<title>(.*?)<\/title>/);
+          const idMatch = entryContent.match(/<yt:videoId>(.*?)<\/yt:videoId>/);
+          const dateMatch = entryContent.match(/<published>(.*?)<\/published>/);
+          const descMatch = entryContent.match(/<media:description>(.*?)<\/media:description>/);
+
+          if (dateMatch && idMatch && titleMatch) {
+            const pubDate = new Date(dateMatch[1]!).getTime();
+            const videoId = idMatch[1]!;
+            const title = titleMatch[1]!;
+            const description = descMatch ? descMatch[1]! : '';
+
+            // Update latest video info if this is the newest
+            if (!creator.latestVideo || pubDate > creator.latestVideo.published) {
+              creator.latestVideo = { title, id: videoId, published: pubDate };
+              creator.lastUploadDate = pubDate;
+            }
+
+            // MINE DATA: Extract keywords and collaborations from every video in the feed (last 15)
+            const videoKeywords = extractKeywords(`${title} ${description}`, CONFIG.STOP_WORDS);
+            const collabs = detectCollaborations(description);
+
+            if (!creator.keywords) creator.keywords = {};
+            videoKeywords.forEach(k => {
+              creator.keywords![k] = (creator.keywords![k] || 0) + 0.1; // Slow accumulation from RSS
+            });
+
+            if (collabs.length > 0) {
+              creator.endorsements = [...new Set([...(creator.endorsements || []), ...collabs])];
+            }
+            
+            entriesFound++;
           }
+        }
+        
+        if (entriesFound > 0) {
           await Storage.saveCreator(creator);
         }
       }
     } catch (e) { console.error(`RSS Fail: ${creator.name}`, e); }
+    
+    // Tiny delay to avoid hammering the RSS endpoint
+    await new Promise(r => setTimeout(r, 500));
   }
   updateScores();
 }
