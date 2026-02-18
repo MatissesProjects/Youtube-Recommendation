@@ -5,7 +5,7 @@ export const AIService = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'llama3', 
+          model: 'qwen3:8b', 
           prompt: text
         })
       });
