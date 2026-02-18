@@ -8,6 +8,7 @@ import { CONFIG } from './constants';
 console.log('Background service worker started.');
 
 const currentlyResearching = new Set<string>();
+let stopRequested = false;
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
@@ -83,6 +84,9 @@ async function updateScores() {
 }
 
 async function pollRSS() {
+  const settings = await Storage.getSettings();
+  if (settings.isBotThrottledUntil > Date.now()) return;
+
   const creators = await Storage.getCreators();
   const topCreators = Object.values(creators)
     .sort((a, b) => b.loyaltyScore - a.loyaltyScore)
@@ -114,7 +118,15 @@ async function pollRSS() {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'importHistory') chrome.tabs.create({ url: 'https://www.youtube.com/feed/history' });
+  if (message.action === 'botCheckDetected') {
+    stopRequested = true;
+    const throttleUntil = Date.now() + (12 * 60 * 60 * 1000); // 12 hour cooling off
+    Storage.getSettings().then(settings => {
+      Storage.saveSettings({ ...settings, isBotThrottledUntil: throttleUntil });
+    });
+    console.error('The Curator: Bot check detected. Researching paused.');
+  }
+  else if (message.action === 'importHistory') chrome.tabs.create({ url: 'https://www.youtube.com/feed/history' });
   else if (message.action === 'refreshScores') {
     updateScores().then(() => sendResponse({ success: true }));
     return true;
@@ -164,6 +176,14 @@ async function processResearch(name: string, data: string, tabId?: number) {
 }
 
 async function startResearch(targetIds?: string[]) {
+  const settings = await Storage.getSettings();
+  if (settings.isBotThrottledUntil > Date.now()) {
+    const hoursLeft = Math.ceil((settings.isBotThrottledUntil - Date.now()) / (1000 * 60 * 60));
+    console.warn(`The Curator [Research]: Throttled due to previous bot check. Resuming in ~${hoursLeft} hours.`);
+    return;
+  }
+
+  stopRequested = false;
   const creators = await Storage.getCreators();
   let list = [];
   
@@ -196,6 +216,11 @@ async function startResearch(targetIds?: string[]) {
   console.log(`The Curator [Research]: Starting batch for ${list.length} creators (Priority: Highest Frequency).`);
 
   for (let i = 0; i < list.length; i++) {
+    if (stopRequested) {
+      console.warn('The Curator [Research]: Stopping batch execution as requested.');
+      break;
+    }
+
     const creator = list[i];
     currentlyResearching.add(creator.id);
     const query = `youtube channel ${creator.name} general channel information`;
@@ -214,7 +239,7 @@ async function startResearch(targetIds?: string[]) {
     }
   }
   
-  console.log('The Curator [Research]: Batch complete.');
+  if (!stopRequested) console.log('The Curator [Research]: Batch complete.');
 }
 
 async function startDiscovery() {
