@@ -23,7 +23,6 @@ async function initGalaxy() {
         const creatorKeywords = Object.entries(c.keywords || {})
             .filter(([k]) => !stopWordsSet.has(k))
             .sort((a, b) => b[1] - a[1]);
-        const primaryKeyword = creatorKeywords[0]?.[0] || 'unknown';
         
         // Find most frequent category for this creator
         const creatorHistory = history.filter(h => h.channelId === c.id);
@@ -35,16 +34,18 @@ async function initGalaxy() {
 
         // Simple hash function for consistent colors based on primary keyword
         let hash = 0;
-        const colorSeed = topCategory; // Color by category for better grouping
+        const colorSeed = topCategory; 
         for (let i = 0; i < colorSeed.length; i++) {
             hash = colorSeed.charCodeAt(i) + ((hash << 5) - hash);
         }
         const hue = Math.abs(hash % 360);
+        
+        const nodeVal = Math.max(4, (c.loyaltyScore / 8));
 
         return {
             id: c.id,
             name: c.name,
-            val: Math.max(4, (c.loyaltyScore / 8)), 
+            val: isNaN(nodeVal) ? 4 : nodeVal, 
             color: `hsl(${hue}, 70%, 60%)`,
             keywords: creatorKeywords.map(([k]) => k),
             category: topCategory,
@@ -52,6 +53,7 @@ async function initGalaxy() {
         };
     });
 
+    const nodeIds = new Set(nodes.map(n => n.id));
     const links: any[] = [];
 
     // 1. Keyword & Semantic Links
@@ -86,11 +88,11 @@ async function initGalaxy() {
     creators.forEach(c => {
         if (c.endorsements) {
             c.endorsements.forEach(targetId => {
-                if (creatorsMap[targetId]) {
+                if (nodeIds.has(targetId)) {
                     links.push({
                         source: c.id,
                         target: targetId,
-                        value: 20, // Strong connection
+                        value: 20, 
                         type: 'social'
                     });
                 }
@@ -103,30 +105,31 @@ async function initGalaxy() {
     for (let i = 0; i < sortedHistory.length - 1; i++) {
         const a = sortedHistory[i];
         const b = sortedHistory[i+1];
+        if (!nodeIds.has(a.channelId) || !nodeIds.has(b.channelId)) continue;
+
         const timeDiff = Math.abs(a.timestamp - b.timestamp);
         
-        // If watched within 30 minutes and different creators
         if (timeDiff < 30 * 60 * 1000 && a.channelId !== b.channelId) {
-            if (creatorsMap[a.channelId] && creatorsMap[b.channelId]) {
-                const existing = links.find(l => 
-                    (l.source === a.channelId && l.target === b.channelId) ||
-                    (l.source === b.channelId && l.target === a.channelId)
-                );
-                
-                if (existing) {
-                    existing.value += 5;
-                    if (existing.type === 'keyword') existing.type = 'temporal'; // Upgrade
-                } else {
-                    links.push({
-                        source: a.channelId,
-                        target: b.channelId,
-                        value: 5,
-                        type: 'temporal'
-                    });
-                }
+            const existing = links.find(l => 
+                (l.source === a.channelId && l.target === b.channelId) ||
+                (l.source === b.channelId && l.target === a.channelId)
+            );
+            
+            if (existing) {
+                existing.value += 5;
+                if (existing.type === 'keyword') existing.type = 'temporal';
+            } else {
+                links.push({
+                    source: a.channelId,
+                    target: b.channelId,
+                    value: 5,
+                    type: 'temporal'
+                });
             }
         }
     }
+
+    console.log(`The Curator: Rendering galaxy with ${nodes.length} nodes and ${links.length} links.`);
 
     const graphContainer = document.getElementById('graph-container')!;
     const graph = ForceGraph()(graphContainer)
@@ -137,16 +140,18 @@ async function initGalaxy() {
             return `<strong>${node.name}</strong> [${node.category}]${description}<br/>Topics: ${node.keywords.slice(0,5).join(', ')}`;
         })
         .nodeCanvasObject((node: any, ctx, globalScale) => {
-            // Safety check for node positions
-            if (node.x === undefined || node.y === undefined) return;
+            if (!node || node.x === undefined || node.y === undefined) return;
 
-            const label = node.name;
-            const fontSize = Math.max(4, 12 / globalScale);
+            const label = node.name || 'Unknown';
+            const size = Math.max(0.1, node.val || 4);
+            const fontSize = Math.max(1, 12 / globalScale);
+            
+            ctx.save();
             
             // Draw Node Circle
             ctx.beginPath();
-            ctx.arc(node.x, node.y, node.val, 0, 2 * Math.PI, false);
-            ctx.fillStyle = node.isSearchMatch ? '#fff' : node.color;
+            ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
+            ctx.fillStyle = node.isSearchMatch ? '#fff' : (node.color || '#4285f4');
             ctx.fill();
             
             // Draw Glow for matches
@@ -156,8 +161,6 @@ async function initGalaxy() {
                 ctx.strokeStyle = "#fff";
                 ctx.lineWidth = 1 / globalScale;
                 ctx.stroke();
-            } else {
-                ctx.shadowBlur = 0;
             }
 
             // Draw Label
@@ -166,8 +169,10 @@ async function initGalaxy() {
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillStyle = '#eee';
-                ctx.fillText(label, node.x, node.y + node.val + fontSize);
+                ctx.fillText(label, node.x, node.y + size + fontSize);
             }
+            
+            ctx.restore();
         })
         .linkWidth(link => Math.sqrt((link as any).value))
         .linkColor(link => {
