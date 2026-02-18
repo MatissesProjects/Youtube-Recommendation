@@ -3,6 +3,23 @@ import { EnrichmentService } from './enrichmentService';
 console.log('The Curator: Research scraper active.');
 
 async function scrapeGoogle() {
+    // Detect Bot/CAPTCHA page
+    const isBotPage = document.title.includes('Sorry!') || 
+                      document.title.includes('About this page') ||
+                      document.body.textContent?.includes('unusual traffic from your computer network') ||
+                      window.location.pathname.includes('/sorry/');
+
+    if (isBotPage) {
+        console.warn('The Curator: Bot check detected! Notifying background worker to stop.');
+        chrome.runtime.sendMessage({ action: 'botCheckDetected' });
+        
+        const warning = document.createElement('div');
+        warning.style.cssText = 'position:fixed; top:0; left:0; right:0; background:#d93025; color:white; padding:15px; text-align:center; z-index:2147483647; font-weight:bold; font-family:sans-serif; font-size: 1.2em;';
+        warning.textContent = '⚠️ BOT CHECK DETECTED. The Curator has paused all background research to protect your account. Please solve the CAPTCHA or wait a few hours.';
+        document.body.appendChild(warning);
+        return;
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const query = urlParams.get('q') || '';
     
