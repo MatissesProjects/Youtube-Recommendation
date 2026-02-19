@@ -112,17 +112,22 @@ import { CONFIG } from './constants';
 
       let channelName = '';
       let channelId = '';
+      let handle: string | undefined = undefined;
 
       if (channelLink) {
           channelId = channelLink.getAttribute('href') || '';
           channelName = (channelLink.textContent || '').trim();
+          if (channelId.includes('/@')) {
+              handle = channelId.split('/').find(p => p.startsWith('@'));
+          }
       } else {
           const metadataRows = item.querySelectorAll('.yt-content-metadata-view-model__metadata-row, yt-content-metadata-view-model');
           for (const row of Array.from(metadataRows)) {
               const firstSpan = row.querySelector('span');
               if (firstSpan && firstSpan.textContent && !firstSpan.textContent.includes('views') && !firstSpan.textContent.includes('ago')) {
                   channelName = firstSpan.textContent.trim();
-                  channelId = '/@' + channelName.replace(/\s+/g, '');
+                  handle = '@' + channelName.replace(/\s+/g, '');
+                  channelId = '/' + handle;
                   break;
               }
           }
@@ -136,6 +141,7 @@ import { CONFIG } from './constants';
         if (!creators[channelId]) {
           creators[channelId] = {
             id: channelId,
+            handle: handle,
             name: channelName,
             loyaltyScore: 0,
             frequency: 0,

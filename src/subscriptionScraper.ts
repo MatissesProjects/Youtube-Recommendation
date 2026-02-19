@@ -17,16 +17,21 @@ import { Storage } from './storage';
       let newCount = 0;
 
       for (const item of Array.from(items)) {
-          const link = item.querySelector('a#main-link, a.ytd-grid-channel-renderer');
-          const nameEl = item.querySelector('#channel-title, #title');
+          const link = item.querySelector('a#main-link, a.ytd-grid-channel-renderer, a#channel-info');
+          const nameEl = item.querySelector('#channel-title, #title, #text.ytd-channel-name');
           
-          const channelId = link?.getAttribute('href');
+          const href = link?.getAttribute('href');
           const channelName = nameEl?.textContent?.trim();
 
-          if (channelId && channelName) {
+          if (href && channelName) {
+              // Normalize ID: prefer handle if available, otherwise use full href
+              const handle = href.includes('/@') ? href.split('/').find(p => p.startsWith('@')) : undefined;
+              const channelId = href; // Keep href as primary ID for now to maintain compatibility
+
               if (!creators[channelId]) {
                   creators[channelId] = {
                       id: channelId,
+                      handle: handle,
                       name: channelName,
                       loyaltyScore: 20, // Baseline for being subscribed
                       frequency: 0,

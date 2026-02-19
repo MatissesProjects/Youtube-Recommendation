@@ -1,5 +1,6 @@
 export interface Creator {
-  id: string; // channelId
+  id: string; // channelId (href or canonical ID)
+  handle?: string; // @handle
   name: string;
   lastUploadDate?: number;
   latestVideo?: {

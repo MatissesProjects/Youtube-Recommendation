@@ -13,6 +13,7 @@ import { extractKeywords, detectCollaborations } from './utils';
 let currentVideoId: string | null = null;
 let currentChannelId: string | null = null;
 let currentChannelName: string | null = null;
+let currentChannelHandle: string | null = null;
 let hasLoggedCurrentVideo = false;
 let currentSegments: SponsorSegment[] = [];
 
@@ -135,7 +136,10 @@ function getChannelInfo() {
     if (link) {
       const href = link.getAttribute('href');
       const name = (link.textContent || '').trim();
-      if (href && name) return { id: href, name: name };
+      if (href && name) {
+        const handle = href.includes('/@') ? href.split('/').find(p => p.startsWith('@')) : undefined;
+        return { id: href, name: name, handle: handle };
+      }
     }
   }
   return null;
@@ -243,6 +247,7 @@ async function logWatch(video: HTMLVideoElement) {
 
     const creator: Creator = {
       id: currentChannelId,
+      handle: currentChannelHandle || existing?.handle,
       name: currentChannelName || 'Unknown',
       loyaltyScore: existing ? existing.loyaltyScore : 0,
       frequency: (existing ? existing.frequency : 0) + 1,
@@ -358,6 +363,7 @@ function initWatcher() {
     currentVideoId = videoId;
     hasLoggedCurrentVideo = false;
     currentSegments = [];
+    currentChannelHandle = null;
     fetchSponsorSegments(videoId);
     
     let retries = 0;
@@ -367,6 +373,7 @@ function initWatcher() {
         if (info) {
           currentChannelId = info.id;
           currentChannelName = info.name;
+          currentChannelHandle = info.handle || null;
         }
         clearInterval(infoInterval);
         setTimeout(scrapeSidebar, 3000);
