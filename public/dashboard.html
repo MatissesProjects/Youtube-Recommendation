@@ -40,7 +40,24 @@
         </div>
     </div>
     <div id="graph-container"></div>
-        <div id="controls">
+    
+    <div id="details-panel" style="display: none; position: absolute; top: 20px; right: 20px; width: 300px; background: rgba(0, 10, 20, 0.9); border: 1px solid #1a73e8; border-radius: 8px; padding: 15px; z-index: 100; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-height: 80vh; overflow-y: auto;">
+        <button id="close-details" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: white; cursor: pointer; font-size: 1.2em;">×</button>
+        <h2 id="creator-name" style="margin: 0 0 5px 0; font-size: 1.2em; color: #1a73e8;">Creator Name</h2>
+        <div id="creator-vibe" style="font-size: 0.85em; font-style: italic; color: #aaa; margin-bottom: 15px;"></div>
+        
+        <h3 style="font-size: 0.9em; text-transform: uppercase; color: #f4b400; margin: 15px 0 10px 0; border-bottom: 1px solid rgba(244, 180, 0, 0.3);">Deep Discoveries</h3>
+        <div id="similar-suggestions" style="font-size: 0.85em;"></div>
+
+        <h3 style="font-size: 0.9em; text-transform: uppercase; color: #4285f4; margin: 15px 0 10px 0; border-bottom: 1px solid rgba(66, 133, 244, 0.3);">From Your Galaxy</h3>
+        <div id="similar-existing" style="font-size: 0.85em;"></div>
+        
+        <div style="margin-top: 20px; text-align: center;">
+            <a id="visit-channel" href="#" target="_blank" style="display: inline-block; padding: 8px 15px; background: #c00; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.9em;">Visit YouTube</a>
+        </div>
+    </div>
+
+    <div id="controls">
             <input type="text" id="semantic-search" placeholder="Search by vibe... (e.g. React performance)" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd; margin-bottom: 10px; background: rgba(255,255,255,0.9);">
             <div id="search-results" style="margin-bottom: 10px; max-height: 200px; overflow-y: auto;"></div>
             <button id="reset-view"

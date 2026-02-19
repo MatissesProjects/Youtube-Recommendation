@@ -132,6 +132,9 @@ async function initGalaxy() {
     console.log(`The Curator: Rendering galaxy with ${nodes.length} nodes and ${links.length} links.`);
 
     const graphContainer = document.getElementById('graph-container')!;
+    const detailsPanel = document.getElementById('details-panel')!;
+    const suggestions = await Storage.getSuggestions();
+
     const graph = ForceGraph()(graphContainer)
         .graphData({ nodes, links })
         .nodeLabel((node: any) => {
@@ -183,12 +186,73 @@ async function initGalaxy() {
             if (type === 'category') return 'rgba(234, 67, 53, 0.3)'; // Red/Coral
             return 'rgba(255, 255, 255, 0.15)'; // Keyword (White)
         })
-        .onNodeClick((node: any) => {
-            if (node && node.id) window.open(normalizeYoutubeUrl(node.id), '_blank');
+        .onNodeClick(async (node: any) => {
+            if (!node) return;
+            
+            const creator = creatorsMap[node.id];
+            if (!creator) return;
+
+            // Show Panel
+            detailsPanel.style.display = 'block';
+            document.getElementById('creator-name')!.textContent = creator.name;
+            document.getElementById('creator-vibe')!.textContent = creator.enrichedDescription || "Building interest profile...";
+            (document.getElementById('visit-channel') as HTMLAnchorElement).href = normalizeYoutubeUrl(creator.id);
+
+            const nodeEmb = embeddingMap.get(node.id);
+            
+            // 1. Find similar existing creators
+            const similarExisting = nodes
+                .filter(n => n.id !== node.id)
+                .map(n => {
+                    const otherEmb = embeddingMap.get(n.id);
+                    let score = 0;
+                    if (nodeEmb && otherEmb) score = cosineSimilarity(nodeEmb, otherEmb);
+                    else {
+                        // Fallback to keyword overlap
+                        const shared = n.keywords.filter((k: string) => node.keywords.includes(k));
+                        score = shared.length / 10;
+                    }
+                    return { name: n.name, id: n.id, score };
+                })
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 5);
+
+            document.getElementById('similar-existing')!.innerHTML = similarExisting.map(s => `
+                <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <a href="${normalizeYoutubeUrl(s.id)}" target="_blank" style="color: #4285f4; text-decoration: none;">${s.name}</a>
+                    <span style="font-size: 0.8em; color: #666;">${Math.round(s.score * 100)}% match</span>
+                </div>
+            `).join('') || '<p style="color: #666;">No similar creators found yet.</p>';
+
+            // 2. Find similar new discoveries (suggestions)
+            const nodeKeywords = new Set(node.keywords);
+            const similarNew = suggestions
+                .filter(s => s.status === 'new')
+                .map(s => {
+                    // Match based on keywords in the reason/ID
+                    const reasonLower = s.reason.toLowerCase();
+                    const matches = Array.from(nodeKeywords).filter(k => reasonLower.includes(k.toLowerCase()));
+                    return { ...s, matchCount: matches.length };
+                })
+                .filter(s => s.matchCount > 0 || (creator.endorsements?.includes(s.channelId)))
+                .sort((a, b) => b.matchCount - a.matchCount)
+                .slice(0, 5);
+
+            document.getElementById('similar-suggestions')!.innerHTML = similarNew.map(s => `
+                <div style="margin-bottom: 10px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">
+                    <div style="font-weight: bold; color: #f4b400;">${s.channelId.replace('/@', '').replace('/', '')}</div>
+                    <div style="font-size: 0.9em; color: #aaa; margin-top: 2px;">${s.reason}</div>
+                    <a href="https://www.youtube.com${s.channelId}" target="_blank" style="display: inline-block; margin-top: 5px; color: #1a73e8; text-decoration: none; font-size: 0.9em;">View Channel →</a>
+                </div>
+            `).join('') || '<p style="color: #666;">Try clicking "Discover New" in the popup to find more connections.</p>';
         })
         .onNodeHover(node => {
             graphContainer.style.cursor = node ? 'pointer' : 'default';
         });
+
+    document.getElementById('close-details')?.addEventListener('click', () => {
+        detailsPanel.style.display = 'none';
+    });
 
     // Improved Force Configuration for "Clumping"
     graph.d3Force('charge')!.strength(-150);
